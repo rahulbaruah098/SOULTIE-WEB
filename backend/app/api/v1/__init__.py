@@ -23,6 +23,11 @@ from app.api.v1.profiles.routes import (
 )
 
 
+from app.api.v1.compatibility.routes import (
+    compatibility_bp,
+)
+
+
 api_v1_bp = Blueprint(
     "api_v1",
     __name__,
@@ -56,6 +61,11 @@ api_v1_bp.register_blueprint(
 
 api_v1_bp.register_blueprint(
     media_bp
+)
+
+
+api_v1_bp.register_blueprint(
+    compatibility_bp
 )
 
 
