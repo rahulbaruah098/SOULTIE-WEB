@@ -533,6 +533,31 @@ def ensure_indexes(db) -> list[str]:
         )
     )
 
+    # Notification producers may retry after network,
+    # worker, or realtime delivery failures. A recipient-
+    # scoped optional dedupe key makes those retries
+    # atomically idempotent at the durable MongoDB layer.
+    #
+    # Notifications without a string dedupe key do not
+    # participate in this unique constraint.
+    created.append(
+        db.notifications.create_index(
+            [
+                ("user_id", ASCENDING),
+                ("dedupe_key", ASCENDING),
+            ],
+            unique=True,
+            name=(
+                "notification_user_dedupe_unique"
+            ),
+            partialFilterExpression={
+                "dedupe_key": {
+                    "$type": "string",
+                },
+            },
+        )
+    )
+
     created.append(
         db.audit_logs.create_index(
             [
