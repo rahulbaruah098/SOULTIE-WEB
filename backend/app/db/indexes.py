@@ -323,7 +323,10 @@ def ensure_indexes(db) -> list[str]:
         db.conversations.create_index(
             [
                 ("member_ids", ASCENDING),
+                ("status", ASCENDING),
                 ("last_message_at", DESCENDING),
+                ("updated_at", DESCENDING),
+                ("_id", DESCENDING),
             ]
         )
     )
@@ -338,12 +341,42 @@ def ensure_indexes(db) -> list[str]:
         )
     )
 
+    # Older Xuoroni databases may already have the original
+    # non-unique conversation/sequence index created under
+    # MongoDB's default generated name. Remove only that known
+    # legacy definition before creating the stronger unique
+    # constraint below.
+    message_indexes = (
+        db.messages.index_information()
+    )
+
+    legacy_sequence_index = (
+        message_indexes.get(
+            "conversation_id_1_sequence_-1"
+        )
+    )
+
+    if (
+        legacy_sequence_index is not None
+        and not legacy_sequence_index.get(
+            "unique",
+            False,
+        )
+    ):
+        db.messages.drop_index(
+            "conversation_id_1_sequence_-1"
+        )
+
     created.append(
         db.messages.create_index(
             [
                 ("conversation_id", ASCENDING),
                 ("sequence", DESCENDING),
-            ]
+            ],
+            unique=True,
+            name=(
+                "conversation_sequence_unique"
+            ),
         )
     )
 

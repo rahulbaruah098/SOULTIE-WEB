@@ -48,6 +48,46 @@ class BaseConfig:
         "",
     )
 
+    # =====================================================
+    # REALTIME CHAT EPHEMERAL STATE
+    # =====================================================
+    #
+    # Typing state is intentionally ephemeral and lives only
+    # in Redis. It must never be treated as durable Chat data.
+    REALTIME_TYPING_KEY_PREFIX = os.getenv(
+        "REALTIME_TYPING_KEY_PREFIX",
+        "xuoroni:realtime:typing",
+    ).strip()
+
+    REALTIME_TYPING_TTL_SECONDS = int(
+        os.getenv(
+            "REALTIME_TYPING_TTL_SECONDS",
+            "8",
+        )
+    )
+
+    # Presence also lives only in Redis. Each authenticated
+    # Socket.IO connection will own its own short-lived key,
+    # allowing multi-device presence without durable state.
+    REALTIME_PRESENCE_KEY_PREFIX = os.getenv(
+        "REALTIME_PRESENCE_KEY_PREFIX",
+        "xuoroni:realtime:presence",
+    ).strip()
+
+    REALTIME_PRESENCE_TTL_SECONDS = int(
+        os.getenv(
+            "REALTIME_PRESENCE_TTL_SECONDS",
+            "75",
+        )
+    )
+
+    REALTIME_PRESENCE_HEARTBEAT_SECONDS = int(
+        os.getenv(
+            "REALTIME_PRESENCE_HEARTBEAT_SECONDS",
+            "25",
+        )
+    )
+
     CELERY_BROKER_URL = os.getenv(
         "CELERY_BROKER_URL",
         "redis://localhost:6379/1",

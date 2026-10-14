@@ -28,6 +28,11 @@ from app.api.v1.compatibility.routes import (
 )
 
 
+from app.api.v1.chats.routes import (
+    chats_bp,
+)
+
+
 api_v1_bp = Blueprint(
     "api_v1",
     __name__,
@@ -66,6 +71,11 @@ api_v1_bp.register_blueprint(
 
 api_v1_bp.register_blueprint(
     compatibility_bp
+)
+
+
+api_v1_bp.register_blueprint(
+    chats_bp
 )
 
 

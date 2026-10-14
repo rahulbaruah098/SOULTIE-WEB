@@ -342,6 +342,134 @@ def list_matches_for_user(
     )
 
 
+def list_active_match_peer_ids_for_user(
+    user_id,
+):
+    """
+    Return the other participant IDs from all currently
+    active matches belonging to one user.
+
+    This is intentionally an authorization-oriented lookup:
+    it has no arbitrary page-size cap and fails closed for
+    malformed stored match membership.
+    """
+
+    user_object_id = (
+        _to_object_id(
+            user_id
+        )
+    )
+
+    if user_object_id is None:
+        return []
+
+    matches = (
+        mongo.db.matches.find(
+            {
+                "user_ids": (
+                    user_object_id
+                ),
+                "status": "active",
+            },
+            {
+                "user_ids": 1,
+            },
+        )
+    )
+
+    peer_ids = []
+    seen_peer_ids = set()
+
+    for match in matches:
+        stored_user_ids = (
+            match.get(
+                "user_ids"
+            )
+        )
+
+        if (
+            not isinstance(
+                stored_user_ids,
+                list,
+            )
+            or len(
+                stored_user_ids
+            )
+            != 2
+        ):
+            continue
+
+        normalized_user_ids = [
+            _to_object_id(
+                value
+            )
+            for value
+            in stored_user_ids
+        ]
+
+        if any(
+            value is None
+            for value
+            in normalized_user_ids
+        ):
+            continue
+
+        first_user_id = (
+            normalized_user_ids[
+                0
+            ]
+        )
+
+        second_user_id = (
+            normalized_user_ids[
+                1
+            ]
+        )
+
+        if (
+            first_user_id
+            == second_user_id
+        ):
+            continue
+
+        if (
+            user_object_id
+            == first_user_id
+        ):
+            peer_user_id = (
+                second_user_id
+            )
+
+        elif (
+            user_object_id
+            == second_user_id
+        ):
+            peer_user_id = (
+                first_user_id
+            )
+
+        else:
+            # Defensive fail-closed behavior for malformed
+            # or unexpectedly shaped stored membership.
+            continue
+
+        if (
+            peer_user_id
+            in seen_peer_ids
+        ):
+            continue
+
+        seen_peer_ids.add(
+            peer_user_id
+        )
+
+        peer_ids.append(
+            peer_user_id
+        )
+
+    return peer_ids
+
+
 def unmatch(
     *,
     match_id,
@@ -426,6 +554,7 @@ __all__ = [
     "get_match_by_id_for_user",
     "get_profile_action",
     "get_reciprocal_positive_action",
+    "list_active_match_peer_ids_for_user",
     "list_matches_for_user",
     "unmatch",
     "upsert_profile_action",

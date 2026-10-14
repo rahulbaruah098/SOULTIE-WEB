@@ -71,14 +71,35 @@ def init_extensions(app: Flask) -> None:
         "async_mode": "threading",
     }
 
-    message_queue = app.config.get(
-        "SOCKETIO_MESSAGE_QUEUE"
+    # Flask-SocketIO keeps server_options on the shared
+    # extension between repeated init_app() calls.
+    #
+    # Xuoroni intentionally uses one shared SocketIO extension,
+    # but create_app() is called repeatedly by tests, CLI tools,
+    # and application factories. A previous app configured with
+    # a Redis message queue must never leak its PubSub manager
+    # into a later app whose queue is disabled.
+    socketio.server_options.pop(
+        "message_queue",
+        None,
     )
 
-    if message_queue:
-        socketio_options["message_queue"] = (
-            message_queue
+    socketio.server_options.pop(
+        "client_manager",
+        None,
+    )
+
+    message_queue = str(
+        app.config.get(
+            "SOCKETIO_MESSAGE_QUEUE"
         )
+        or ""
+    ).strip()
+
+    if message_queue:
+        socketio_options[
+            "message_queue"
+        ] = message_queue
 
     socketio.init_app(
         app,

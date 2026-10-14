@@ -21,6 +21,10 @@ from .extensions import init_extensions
 from .logging import configure_logging
 from .middleware import register_middleware
 
+# Import realtime handlers once so their Socket.IO decorators
+# are registered on the shared extension before normal app startup.
+from . import realtime as _realtime
+
 
 def create_app(config_override=None) -> Flask:
     app = Flask(__name__)
