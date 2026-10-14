@@ -975,3 +975,636 @@ def test_active_match_rejects_pass_api(
         ]
         == "MATCH_ALREADY_ACTIVE"
     )
+
+
+def _create_active_match_for_experience(
+    client,
+    app,
+    *,
+    first_phone,
+    second_phone,
+):
+    first = _login(
+        client,
+        phone=first_phone,
+    )
+
+    second = _login(
+        client,
+        phone=second_phone,
+    )
+
+    with app.app_context():
+        _activate_user(
+            first["user_id"]
+        )
+
+        _activate_user(
+            second["user_id"]
+        )
+
+    first_action = client.post(
+        "/api/v1/matches/actions",
+        headers=first["headers"],
+        json={
+            "target_user_id": str(
+                second["user_id"]
+            ),
+            "action": "like",
+        },
+    )
+
+    assert (
+        first_action.status_code
+        == 200
+    )
+
+    assert (
+        first_action.get_json()[
+            "matched"
+        ]
+        is False
+    )
+
+    second_action = client.post(
+        "/api/v1/matches/actions",
+        headers=second["headers"],
+        json={
+            "target_user_id": str(
+                first["user_id"]
+            ),
+            "action": "like",
+        },
+    )
+
+    assert (
+        second_action.status_code
+        == 200
+    )
+
+    body = (
+        second_action.get_json()
+    )
+
+    assert body["matched"] is True
+
+    return {
+        "first": first,
+        "second": second,
+        "match_id": body[
+            "match"
+        ][
+            "id"
+        ],
+    }
+
+
+def test_match_experience_requires_authentication(
+    client,
+):
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + str(
+                ObjectId()
+            )
+            + "/experience"
+        )
+    )
+
+    assert (
+        response.status_code
+        == 401
+    )
+
+
+def test_match_experience_success(
+    client,
+    app,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543401",
+            second_phone="9876543402",
+        )
+    )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 200
+    )
+
+    body = (
+        response.get_json()
+    )
+
+    assert (
+        body["version"]
+        == "v1"
+    )
+
+    assert (
+        body[
+            "match"
+        ][
+            "id"
+        ]
+        == pair["match_id"]
+    )
+
+    assert (
+        body[
+            "match"
+        ][
+            "status"
+        ]
+        == "active"
+    )
+
+    assert (
+        body[
+            "match"
+        ][
+            "other_user_id"
+        ]
+        == str(
+            pair[
+                "second"
+            ][
+                "user_id"
+            ]
+        )
+    )
+
+    assert (
+        body[
+            "compatibility"
+        ][
+            "target_user_id"
+        ]
+        == str(
+            pair[
+                "second"
+            ][
+                "user_id"
+            ]
+        )
+    )
+
+    assert isinstance(
+        body["icebreakers"],
+        list,
+    )
+
+    assert (
+        len(
+            body[
+                "icebreakers"
+            ]
+        )
+        >= 1
+    )
+
+    assert body["chat"] == {
+        "available": True,
+        "conversation_id": None,
+        "unlock_required": False,
+    }
+
+    with app.app_context():
+        assert (
+            mongo.db.conversations.count_documents(
+                {
+                    "match_id": ObjectId(
+                        pair["match_id"]
+                    ),
+                }
+            )
+            == 0
+        )
+
+
+def test_match_experience_is_symmetric_for_both_members(
+    client,
+    app,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543403",
+            second_phone="9876543404",
+        )
+    )
+
+    first_response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    second_response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=pair[
+            "second"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        first_response.status_code
+        == 200
+    )
+
+    assert (
+        second_response.status_code
+        == 200
+    )
+
+    assert (
+        first_response.get_json()[
+            "match"
+        ][
+            "other_user_id"
+        ]
+        == str(
+            pair[
+                "second"
+            ][
+                "user_id"
+            ]
+        )
+    )
+
+    assert (
+        second_response.get_json()[
+            "match"
+        ][
+            "other_user_id"
+        ]
+        == str(
+            pair[
+                "first"
+            ][
+                "user_id"
+            ]
+        )
+    )
+
+
+def test_match_experience_valid_icebreaker_limit(
+    client,
+    app,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543405",
+            second_phone="9876543406",
+        )
+    )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+            + "?icebreaker_limit=1"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 200
+    )
+
+    assert (
+        len(
+            response.get_json()[
+                "icebreakers"
+            ]
+        )
+        == 1
+    )
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "0",
+        "7",
+        "abc",
+    ],
+)
+def test_match_experience_rejects_invalid_icebreaker_limit(
+    client,
+    app,
+    value,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543407",
+            second_phone="9876543408",
+        )
+    )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+            + "?icebreaker_limit="
+            + value
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 400
+    )
+
+    body = (
+        response.get_json()
+    )
+
+    assert (
+        body[
+            "error"
+        ][
+            "code"
+        ]
+        == "INVALID_ICEBREAKER_LIMIT"
+    )
+
+
+def test_match_experience_invalid_match_returns_not_found(
+    client,
+    app,
+):
+    login = _login(
+        client,
+        phone="9876543409",
+    )
+
+    with app.app_context():
+        _activate_user(
+            login["user_id"]
+        )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            "not-an-object-id"
+            "/experience"
+        ),
+        headers=login[
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 404
+    )
+
+    assert (
+        response.get_json()[
+            "error"
+        ][
+            "code"
+        ]
+        == "MATCH_EXPERIENCE_NOT_FOUND"
+    )
+
+
+def test_match_experience_non_member_cannot_access(
+    client,
+    app,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543410",
+            second_phone="9876543411",
+        )
+    )
+
+    outsider = _login(
+        client,
+        phone="9876543412",
+    )
+
+    with app.app_context():
+        _activate_user(
+            outsider["user_id"]
+        )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=outsider[
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 404
+    )
+
+    assert (
+        response.get_json()[
+            "error"
+        ][
+            "code"
+        ]
+        == "MATCH_EXPERIENCE_NOT_FOUND"
+    )
+
+
+def test_match_experience_unmatched_pair_is_rejected(
+    client,
+    app,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543413",
+            second_phone="9876543414",
+        )
+    )
+
+    unmatch = client.post(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/unmatch"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        unmatch.status_code
+        == 200
+    )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 409
+    )
+
+    assert (
+        response.get_json()[
+            "error"
+        ][
+            "code"
+        ]
+        == "MATCH_INACTIVE"
+    )
+
+
+@pytest.mark.parametrize(
+    "reverse_block",
+    [
+        False,
+        True,
+    ],
+)
+def test_match_experience_blocked_pair_fails_closed(
+    client,
+    app,
+    reverse_block,
+):
+    pair = (
+        _create_active_match_for_experience(
+            client,
+            app,
+            first_phone="9876543415",
+            second_phone="9876543416",
+        )
+    )
+
+    with app.app_context():
+        blocker_id = (
+            pair[
+                "second"
+            ][
+                "user_id"
+            ]
+            if reverse_block
+            else pair[
+                "first"
+            ][
+                "user_id"
+            ]
+        )
+
+        blocked_id = (
+            pair[
+                "first"
+            ][
+                "user_id"
+            ]
+            if reverse_block
+            else pair[
+                "second"
+            ][
+                "user_id"
+            ]
+        )
+
+        mongo.db.blocks.insert_one(
+            {
+                "blocker_id": blocker_id,
+                "blocked_id": blocked_id,
+            }
+        )
+
+    response = client.get(
+        (
+            "/api/v1/matches/"
+            + pair["match_id"]
+            + "/experience"
+        ),
+        headers=pair[
+            "first"
+        ][
+            "headers"
+        ],
+    )
+
+    assert (
+        response.status_code
+        == 404
+    )
+
+    assert (
+        response.get_json()[
+            "error"
+        ][
+            "code"
+        ]
+        == "MATCH_EXPERIENCE_NOT_AVAILABLE"
+    )

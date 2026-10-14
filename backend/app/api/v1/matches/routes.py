@@ -10,6 +10,10 @@ from flask import (
 from app.security.authentication import (
     auth_required,
 )
+from app.services.match_experience_service import (
+    MatchExperienceServiceError,
+    get_match_experience,
+)
 from app.services.matching_service import (
     MatchingServiceError,
     get_my_match,
@@ -135,6 +139,37 @@ def get_match(
         {
             "match": match,
         }
+    )
+
+
+@matches_bp.get(
+    "/<match_id>/experience"
+)
+@auth_required
+def get_match_experience_route(
+    match_id,
+):
+    try:
+        result = get_match_experience(
+            user_id=(
+                g.current_user["_id"]
+            ),
+            match_id=match_id,
+            icebreaker_limit=(
+                request.args.get(
+                    "icebreaker_limit",
+                    6,
+                )
+            ),
+        )
+
+    except MatchExperienceServiceError as exc:
+        return _service_error(
+            exc
+        )
+
+    return jsonify(
+        result
     )
 
 

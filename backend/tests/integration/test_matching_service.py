@@ -17,6 +17,7 @@ from app.repositories.profile_repository import (
 from app.repositories.user_repository import (
     create_user,
 )
+from app.services import matching_service
 from app.services.matching_service import (
     MatchingConflictError,
     MatchingLifecycleError,
@@ -760,4 +761,403 @@ def test_missing_target_user_is_rejected(
         assert (
             exc_info.value.code
             == "USER_NOT_FOUND"
+        )
+
+
+def test_new_mutual_match_emits_match_created_to_both_members(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users()
+    second = matching_users()
+
+    emitted = []
+
+    def fake_emit_match_created(
+        *,
+        user_id,
+        match,
+    ):
+        emitted.append(
+            {
+                "user_id": str(
+                    user_id
+                ),
+                "match": dict(
+                    match
+                ),
+            }
+        )
+
+    monkeypatch.setattr(
+        matching_service,
+        "emit_match_created",
+        fake_emit_match_created,
+    )
+
+    with app.app_context():
+        first_action = (
+            submit_profile_action(
+                actor_id=first,
+                target_id=second,
+                action="like",
+            )
+        )
+
+        assert (
+            first_action["matched"]
+            is False
+        )
+
+        assert emitted == []
+
+        second_action = (
+            submit_profile_action(
+                actor_id=second,
+                target_id=first,
+                action="like",
+            )
+        )
+
+        assert (
+            second_action["matched"]
+            is True
+        )
+
+        assert len(
+            emitted
+        ) == 2
+
+        assert {
+            item["user_id"]
+            for item in emitted
+        } == {
+            str(first),
+            str(second),
+        }
+
+        first_event = next(
+            item
+            for item in emitted
+            if (
+                item["user_id"]
+                == str(first)
+            )
+        )
+
+        second_event = next(
+            item
+            for item in emitted
+            if (
+                item["user_id"]
+                == str(second)
+            )
+        )
+
+        assert (
+            first_event[
+                "match"
+            ][
+                "other_user_id"
+            ]
+            == str(second)
+        )
+
+        assert (
+            second_event[
+                "match"
+            ][
+                "other_user_id"
+            ]
+            == str(first)
+        )
+
+        assert (
+            first_event[
+                "match"
+            ][
+                "id"
+            ]
+            == second_event[
+                "match"
+            ][
+                "id"
+            ]
+        )
+
+        stored = get_match_between(
+            first,
+            second,
+        )
+
+        assert stored is not None
+
+        assert (
+            stored["status"]
+            == "active"
+        )
+
+
+def test_existing_active_match_does_not_reemit_match_created(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users()
+    second = matching_users()
+
+    emitted = []
+
+    monkeypatch.setattr(
+        matching_service,
+        "emit_match_created",
+        lambda **kwargs: (
+            emitted.append(
+                kwargs
+            )
+        ),
+    )
+
+    with app.app_context():
+        first_action = (
+            submit_profile_action(
+                actor_id=first,
+                target_id=second,
+                action="like",
+            )
+        )
+
+        assert (
+            first_action["matched"]
+            is False
+        )
+
+        created = (
+            submit_profile_action(
+                actor_id=second,
+                target_id=first,
+                action="like",
+            )
+        )
+
+        assert (
+            created["matched"]
+            is True
+        )
+
+        assert len(
+            emitted
+        ) == 2
+
+        emitted.clear()
+
+        repeated = (
+            submit_profile_action(
+                actor_id=first,
+                target_id=second,
+                action="super_like",
+            )
+        )
+
+        assert (
+            repeated["matched"]
+            is True
+        )
+
+        assert emitted == []
+
+        assert (
+            repeated[
+                "match"
+            ][
+                "id"
+            ]
+            == created[
+                "match"
+            ][
+                "id"
+            ]
+        )
+
+        assert (
+            mongo.db.matches.count_documents(
+                {
+                    "_id": (
+                        get_match_between(
+                            first,
+                            second,
+                        )["_id"]
+                    ),
+                }
+            )
+            == 1
+        )
+
+
+def test_repository_created_false_does_not_emit_match_created(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users()
+    second = matching_users()
+
+    emitted = []
+
+    with app.app_context():
+        existing = (
+            create_match_if_absent(
+                first_user_id=first,
+                second_user_id=second,
+                matched_by=first,
+            )
+        )
+
+        raw_match = existing[
+            "match"
+        ]
+
+        upsert_profile_action(
+            actor_id=second,
+            target_id=first,
+            action="like",
+        )
+
+        monkeypatch.setattr(
+            matching_service,
+            "get_match_between",
+            lambda first_user_id, second_user_id: None,
+        )
+
+        monkeypatch.setattr(
+            matching_service,
+            "create_match_if_absent",
+            lambda **kwargs: {
+                "match": raw_match,
+                "created": False,
+            },
+        )
+
+        monkeypatch.setattr(
+            matching_service,
+            "emit_match_created",
+            lambda **kwargs: (
+                emitted.append(
+                    kwargs
+                )
+            ),
+        )
+
+        result = (
+            submit_profile_action(
+                actor_id=first,
+                target_id=second,
+                action="like",
+            )
+        )
+
+        assert (
+            result["matched"]
+            is True
+        )
+
+        assert emitted == []
+
+
+def test_realtime_failure_does_not_fail_durable_match(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users()
+    second = matching_users()
+
+    attempted = []
+
+    def failing_emit(
+        *,
+        user_id,
+        match,
+    ):
+        attempted.append(
+            str(
+                user_id
+            )
+        )
+
+        raise RuntimeError(
+            "Simulated realtime failure."
+        )
+
+    monkeypatch.setattr(
+        matching_service,
+        "emit_match_created",
+        failing_emit,
+    )
+
+    with app.app_context():
+        first_action = (
+            submit_profile_action(
+                actor_id=first,
+                target_id=second,
+                action="like",
+            )
+        )
+
+        assert (
+            first_action["matched"]
+            is False
+        )
+
+        result = (
+            submit_profile_action(
+                actor_id=second,
+                target_id=first,
+                action="like",
+            )
+        )
+
+        assert (
+            result["matched"]
+            is True
+        )
+
+        assert attempted == [
+            str(second),
+            str(first),
+        ]
+
+        stored = get_match_between(
+            first,
+            second,
+        )
+
+        assert stored is not None
+
+        assert (
+            stored["status"]
+            == "active"
+        )
+
+        assert (
+            str(
+                stored["_id"]
+            )
+            == result[
+                "match"
+            ][
+                "id"
+            ]
+        )
+
+        assert (
+            mongo.db.matches.count_documents(
+                {
+                    "_id": stored[
+                        "_id"
+                    ],
+                }
+            )
+            == 1
         )

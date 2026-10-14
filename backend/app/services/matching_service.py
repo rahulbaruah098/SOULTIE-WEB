@@ -1,5 +1,7 @@
 """Business rules for Xuoroni profile actions and matching."""
 
+import logging
+
 from bson import ObjectId
 from bson.errors import InvalidId
 
@@ -19,9 +21,17 @@ from app.repositories.profile_repository import (
 from app.repositories.user_repository import (
     get_user_by_id,
 )
+from app.realtime.notifications import (
+    emit_match_created,
+)
 from app.schemas.match import (
     normalize_profile_action,
     serialize_match_for_user,
+)
+
+
+logger = logging.getLogger(
+    __name__
 )
 
 
@@ -308,6 +318,51 @@ def _validate_matching_pair(
     )
 
 
+def _emit_new_match_created_best_effort(
+    *,
+    match,
+    first_user_id,
+    second_user_id,
+):
+    """
+    Emit match.created independently to both match members.
+
+    The match is already durable before this helper runs.
+    Realtime delivery is auxiliary: one recipient failing must
+    neither fail the durable match nor prevent an attempt for
+    the other recipient.
+    """
+
+    for recipient_user_id in (
+        first_user_id,
+        second_user_id,
+    ):
+        try:
+            serialized_match = (
+                serialize_match_for_user(
+                    match,
+                    recipient_user_id,
+                )
+            )
+
+            emit_match_created(
+                user_id=(
+                    recipient_user_id
+                ),
+                match=serialized_match,
+            )
+
+        except Exception:
+            logger.warning(
+                (
+                    "Auxiliary match.created "
+                    "emission failed after "
+                    "durable match creation."
+                ),
+                exc_info=True,
+            )
+
+
 def submit_profile_action(
     *,
     actor_id,
@@ -439,6 +494,18 @@ def submit_profile_action(
                 "not be created."
             ),
             status_code=409,
+        )
+
+    if (
+        created.get(
+            "created"
+        )
+        is True
+    ):
+        _emit_new_match_created_best_effort(
+            match=match,
+            first_user_id=actor,
+            second_user_id=target,
         )
 
     return {

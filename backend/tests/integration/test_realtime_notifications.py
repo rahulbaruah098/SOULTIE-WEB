@@ -740,3 +740,431 @@ def test_presence_events_are_outbound_only(
         "presence.heartbeat"
         in handlers
     )
+
+
+from app.realtime import (
+    notifications as match_notifications,
+)
+
+
+def _match_created_match(
+    **overrides,
+):
+    match = {
+        "id": "match-123",
+        "status": "active",
+        "other_user_id": "peer-user",
+        "matched_at": (
+            "2026-10-14T10:00:00+00:00"
+        ),
+        "updated_at": (
+            "2026-10-14T10:00:00+00:00"
+        ),
+    }
+
+    match.update(
+        overrides
+    )
+
+    return match
+
+
+def test_match_created_emits_minimal_private_payload(
+    monkeypatch,
+):
+    emitted = []
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    def fake_emit(
+        event,
+        payload,
+        **kwargs,
+    ):
+        emitted.append(
+            {
+                "event": event,
+                "payload": payload,
+                **kwargs,
+            }
+        )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        fake_emit,
+    )
+
+    match = (
+        _match_created_match()
+    )
+
+    result = (
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=match,
+        )
+    )
+
+    assert result == {
+        "event": "match.created",
+        "recipient_user_id": (
+            "recipient-user"
+        ),
+        "payload": {
+            "event": "match.created",
+            "match": match,
+            "experience_available": True,
+        },
+    }
+
+    assert len(
+        emitted
+    ) == 1
+
+    assert (
+        emitted[0]["event"]
+        == "match.created"
+    )
+
+    assert (
+        emitted[0]["to"]
+        == "user:recipient-user"
+    )
+
+    assert (
+        emitted[0]["namespace"]
+        == "/"
+    )
+
+    assert (
+        emitted[0]["payload"]
+        == result["payload"]
+    )
+
+    assert set(
+        result["payload"].keys()
+    ) == {
+        "event",
+        "match",
+        "experience_available",
+    }
+
+    assert (
+        "compatibility"
+        not in result["payload"]
+    )
+
+    assert (
+        "icebreakers"
+        not in result["payload"]
+    )
+
+    assert (
+        "profile"
+        not in result["payload"]
+    )
+
+    assert (
+        "conversation"
+        not in result["payload"]
+    )
+
+
+def test_match_created_blocked_pair_fails_closed(
+    monkeypatch,
+):
+    emitted = []
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: True,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        lambda *args, **kwargs: (
+            emitted.append(
+                {
+                    "args": args,
+                    "kwargs": kwargs,
+                }
+            )
+        ),
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ):
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=(
+                _match_created_match()
+            ),
+        )
+
+    assert emitted == []
+
+
+def test_match_created_unavailable_recipient_fails_closed(
+    monkeypatch,
+):
+    emitted = []
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        lambda *args, **kwargs: (
+            emitted.append(
+                {
+                    "args": args,
+                    "kwargs": kwargs,
+                }
+            )
+        ),
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ):
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=(
+                _match_created_match()
+            ),
+        )
+
+    assert emitted == []
+
+
+def test_match_created_block_lookup_failure_is_wrapped(
+    monkeypatch,
+):
+    emitted = []
+
+    def fail_block_lookup(
+        first,
+        second,
+    ):
+        raise RuntimeError(
+            "Repository unavailable."
+        )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        fail_block_lookup,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        lambda *args, **kwargs: (
+            emitted.append(
+                {
+                    "args": args,
+                    "kwargs": kwargs,
+                }
+            )
+        ),
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ) as exc_info:
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=(
+                _match_created_match()
+            ),
+        )
+
+    assert (
+        exc_info.value.code
+        == match_notifications.ROUTING_ERROR_CODE
+    )
+
+    assert emitted == []
+
+
+def test_match_created_socket_failure_is_wrapped(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    def fail_emit(
+        *args,
+        **kwargs,
+    ):
+        raise RuntimeError(
+            "Socket unavailable."
+        )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        fail_emit,
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ) as exc_info:
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=(
+                _match_created_match()
+            ),
+        )
+
+    assert (
+        exc_info.value.code
+        == match_notifications.ROUTING_ERROR_CODE
+    )
+
+
+def test_match_created_rejects_recipient_as_peer(
+    monkeypatch,
+):
+    emitted = []
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        lambda *args, **kwargs: (
+            emitted.append(
+                {
+                    "args": args,
+                    "kwargs": kwargs,
+                }
+            )
+        ),
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ):
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=(
+                _match_created_match(
+                    other_user_id=(
+                        "recipient-user"
+                    )
+                )
+            ),
+        )
+
+    assert emitted == []
+
+
+@pytest.mark.parametrize(
+    "match",
+    [
+        None,
+        {},
+        {
+            "id": "match-123",
+        },
+        {
+            "other_user_id": "peer-user",
+        },
+    ],
+)
+def test_match_created_rejects_malformed_match(
+    monkeypatch,
+    match,
+):
+    emitted = []
+
+    monkeypatch.setattr(
+        match_notifications,
+        "pair_is_blocked",
+        lambda first, second: False,
+    )
+
+    monkeypatch.setattr(
+        match_notifications,
+        "_observer_is_available",
+        lambda user_id: True,
+    )
+
+    monkeypatch.setattr(
+        match_notifications.socketio,
+        "emit",
+        lambda *args, **kwargs: (
+            emitted.append(
+                {
+                    "args": args,
+                    "kwargs": kwargs,
+                }
+            )
+        ),
+    )
+
+    with pytest.raises(
+        match_notifications.RealtimeNotificationRoutingError
+    ):
+        match_notifications.emit_match_created(
+            user_id="recipient-user",
+            match=match,
+        )
+
+    assert emitted == []

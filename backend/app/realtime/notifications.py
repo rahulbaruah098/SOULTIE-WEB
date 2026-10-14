@@ -3,6 +3,10 @@
 from flask_socketio import join_room
 
 from app.extensions import socketio
+from app.schemas.match_experience import (
+    MATCH_CREATED_EVENT,
+    build_match_created_payload,
+)
 from app.repositories.match_repository import (
     list_active_match_peer_ids_for_user,
 )
@@ -305,6 +309,102 @@ def emit_presence_transition(
     }
 
 
+def emit_match_created(
+    *,
+    user_id,
+    match,
+):
+    """
+    Emit one privacy-safe match.created event.
+
+    The recipient room is derived entirely server-side.
+    The match must already be serialized for this recipient,
+    so other_user_id always represents the peer rather than
+    exposing canonical member IDs.
+
+    This helper does not persist notifications and does not
+    create Chat conversations. Those concerns belong to their
+    owning subsystems.
+    """
+
+    recipient_user_id = (
+        _normalize_user_id(
+            user_id
+        )
+    )
+
+    if not isinstance(
+        match,
+        dict,
+    ):
+        raise RealtimeNotificationRoutingError()
+
+    try:
+        payload = (
+            build_match_created_payload(
+                match=match
+            )
+        )
+
+    except ValueError as exc:
+        raise RealtimeNotificationRoutingError() from exc
+
+    other_user_id = str(
+        payload[
+            "match"
+        ].get(
+            "other_user_id"
+        )
+        or ""
+    ).strip()
+
+    if (
+        not other_user_id
+        or other_user_id
+        == recipient_user_id
+    ):
+        raise RealtimeNotificationRoutingError()
+
+    try:
+        if pair_is_blocked(
+            recipient_user_id,
+            other_user_id,
+        ):
+            raise RealtimeNotificationRoutingError()
+
+        if not _observer_is_available(
+            recipient_user_id
+        ):
+            raise RealtimeNotificationRoutingError()
+
+    except RealtimeNotificationRoutingError:
+        raise
+
+    except Exception as exc:
+        raise RealtimeNotificationRoutingError() from exc
+
+    try:
+        socketio.emit(
+            MATCH_CREATED_EVENT,
+            payload,
+            to=private_user_room_name(
+                recipient_user_id
+            ),
+            namespace="/",
+        )
+
+    except Exception as exc:
+        raise RealtimeNotificationRoutingError() from exc
+
+    return {
+        "event": MATCH_CREATED_EVENT,
+        "recipient_user_id": (
+            recipient_user_id
+        ),
+        "payload": payload,
+    }
+
+
 def emit_conversation_update(
     *,
     user_id,
@@ -430,6 +530,8 @@ __all__ = [
     "ROUTING_ERROR_CODE",
     "ROUTING_ERROR_MESSAGE",
     "RealtimeNotificationRoutingError",
+    "MATCH_CREATED_EVENT",
+    "emit_match_created",
     "emit_presence_transition",
     "join_private_user_room",
     "list_presence_observer_ids",
