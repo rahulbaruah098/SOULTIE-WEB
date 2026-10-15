@@ -523,6 +523,20 @@ def ensure_indexes(db) -> list[str]:
     # NOTIFICATIONS / OPERATIONS
     # =====================================================
 
+    # Exactly one durable in-app Notification Preferences record
+    # is allowed per Xuoroni user.
+    created.append(
+        db.notification_preferences.create_index(
+            [
+                ("user_id", ASCENDING),
+            ],
+            unique=True,
+            name=(
+                "notification_preferences_user_unique"
+            ),
+        )
+    )
+
     created.append(
         db.notifications.create_index(
             [

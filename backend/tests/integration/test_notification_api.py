@@ -117,6 +117,22 @@ def test_registered_notification_api_route_map(
             ),
         ),
         (
+            "/api/v1/notifications/preferences",
+            frozenset(
+                {
+                    "GET",
+                }
+            ),
+        ),
+        (
+            "/api/v1/notifications/preferences",
+            frozenset(
+                {
+                    "PUT",
+                }
+            ),
+        ),
+        (
             "/api/v1/notifications/unread-count",
             frozenset(
                 {
@@ -125,10 +141,7 @@ def test_registered_notification_api_route_map(
             ),
         ),
         (
-            (
-                "/api/v1/notifications/"
-                "<notification_id>/read"
-            ),
+            "/api/v1/notifications/<notification_id>/read",
             frozenset(
                 {
                     "POST",

@@ -13,10 +13,12 @@ from app.security.authentication import (
 from app.services.notification_service import (
     NotificationServiceError,
     NotificationValidationError,
+    get_my_notification_preferences,
     get_my_unread_notification_count,
     list_my_notifications,
     mark_all_my_notifications_read,
     mark_my_notification_read,
+    update_my_notification_preferences,
 )
 
 
@@ -105,6 +107,57 @@ def list_notifications():
                 ),
                 unread_only=(
                     _parse_unread_only()
+                ),
+            )
+        )
+
+    except NotificationServiceError as exc:
+        return _service_error(
+            exc
+        )
+
+    return jsonify(
+        result
+    )
+
+
+@notifications_bp.get(
+    "/preferences"
+)
+@auth_required
+def get_notification_preferences():
+    try:
+        result = (
+            get_my_notification_preferences(
+                g.current_user[
+                    "_id"
+                ]
+            )
+        )
+
+    except NotificationServiceError as exc:
+        return _service_error(
+            exc
+        )
+
+    return jsonify(
+        result
+    )
+
+
+@notifications_bp.put(
+    "/preferences"
+)
+@auth_required
+def update_notification_preferences():
+    try:
+        result = (
+            update_my_notification_preferences(
+                g.current_user[
+                    "_id"
+                ],
+                request.get_json(
+                    silent=True
                 ),
             )
         )

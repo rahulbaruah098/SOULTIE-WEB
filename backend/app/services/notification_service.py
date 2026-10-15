@@ -17,6 +17,11 @@ from app.repositories.chat_repository import (
 from app.repositories.match_repository import (
     get_match_by_id_for_user,
 )
+from app.repositories.notification_preferences_repository import (
+    ensure_notification_preferences_for_user,
+    get_notification_preferences_for_user,
+    update_notification_preferences_for_user,
+)
 from app.repositories.notification_repository import (
     DEFAULT_NOTIFICATION_PAGE_SIZE,
     MAX_NOTIFICATION_PAGE_SIZE,
@@ -33,6 +38,11 @@ from app.repositories.safety_repository import (
 )
 from app.repositories.user_repository import (
     get_user_by_id,
+)
+from app.schemas.notification_preferences import (
+    normalize_notification_preferences_patch,
+    notification_type_is_enabled,
+    serialize_notification_preferences_for_owner,
 )
 from app.schemas.notification import (
     normalize_notification_resource,
@@ -787,6 +797,17 @@ def create_notification(
             status_code=409,
         )
 
+    # User-disableable Notification types are suppressed before durable write.
+    # Mandatory safety/security types always remain enabled by schema contract.
+    if not notification_type_is_enabled_for_user(
+        recipient,
+        notification_type,
+    ):
+        return {
+            "notification": None,
+            "created": False,
+        }
+
     try:
         result = (
             create_notification_idempotent(
@@ -1252,6 +1273,155 @@ def mark_all_my_notifications_read(
     }
 
 
+def get_my_notification_preferences(
+    user_id,
+):
+    """Return the authenticated user's durable in-app preferences."""
+
+    owner_id = _to_object_id(
+        user_id,
+        field_name="user_id",
+    )
+
+    _require_current_user(
+        owner_id
+    )
+
+    preferences = (
+        ensure_notification_preferences_for_user(
+            owner_id
+        )
+    )
+
+    if preferences is None:
+        raise NotificationLifecycleError(
+            "NOTIFICATION_PREFERENCES_UNAVAILABLE",
+            (
+                "Notification preferences "
+                "are unavailable."
+            ),
+            status_code=409,
+        )
+
+    return {
+        "preferences": (
+            serialize_notification_preferences_for_owner(
+                preferences
+            )
+        ),
+    }
+
+
+def update_my_notification_preferences(
+    user_id,
+    payload,
+    *,
+    now=None,
+):
+    """Validate and persist the authenticated user's in-app preferences."""
+
+    owner_id = _to_object_id(
+        user_id,
+        field_name="user_id",
+    )
+
+    _require_current_user(
+        owner_id
+    )
+
+    try:
+        patch = (
+            normalize_notification_preferences_patch(
+                payload
+            )
+        )
+
+    except ValueError as exc:
+        raise NotificationValidationError(
+            "INVALID_NOTIFICATION_PREFERENCES",
+            str(
+                exc
+            ),
+            status_code=400,
+        ) from None
+
+    try:
+        preferences = (
+            update_notification_preferences_for_user(
+                owner_id,
+                disabled_types=(
+                    patch[
+                        "disabled_types"
+                    ]
+                ),
+                now=now,
+            )
+        )
+
+    except ValueError as exc:
+        raise NotificationValidationError(
+            "INVALID_NOTIFICATION_PREFERENCES",
+            str(
+                exc
+            ),
+            status_code=400,
+        ) from None
+
+    if preferences is None:
+        raise NotificationLifecycleError(
+            "NOTIFICATION_PREFERENCES_UNAVAILABLE",
+            (
+                "Notification preferences "
+                "are unavailable."
+            ),
+            status_code=409,
+        )
+
+    return {
+        "preferences": (
+            serialize_notification_preferences_for_owner(
+                preferences
+            )
+        ),
+    }
+
+
+def notification_type_is_enabled_for_user(
+    user_id,
+    notification_type,
+):
+    """Return whether one in-app Notification type is enabled for a user."""
+
+    owner_id = _to_object_id(
+        user_id,
+        field_name="user_id",
+    )
+
+    _require_current_user(
+        owner_id
+    )
+
+    preferences = (
+        get_notification_preferences_for_user(
+            owner_id
+        )
+    )
+
+    try:
+        return notification_type_is_enabled(
+            preferences,
+            notification_type,
+        )
+
+    except ValueError as exc:
+        raise NotificationValidationError(
+            "INVALID_NOTIFICATION_TYPE",
+            str(
+                exc
+            ),
+            status_code=400,
+        ) from None
+
 __all__ = [
     "NOTIFICATION_CURSOR_MAX_LENGTH",
     "NotificationConflictError",
@@ -1262,8 +1432,11 @@ __all__ = [
     "create_notification",
     "decode_notification_cursor",
     "encode_notification_cursor",
+    "get_my_notification_preferences",
     "get_my_unread_notification_count",
     "list_my_notifications",
     "mark_all_my_notifications_read",
     "mark_my_notification_read",
+    "notification_type_is_enabled_for_user",
+    "update_my_notification_preferences",
 ]
