@@ -24,6 +24,9 @@ from app.repositories.user_repository import (
 from app.realtime.notifications import (
     emit_match_created,
 )
+from app.services.notification_service import (
+    create_notification,
+)
 from app.schemas.match import (
     normalize_profile_action,
     serialize_match_for_user,
@@ -318,6 +321,83 @@ def _validate_matching_pair(
     )
 
 
+def _create_new_match_notifications_best_effort(
+    *,
+    match,
+    first_user_id,
+    second_user_id,
+):
+    """
+    Create durable new_match notifications for both members.
+
+    The match is already durable before this helper runs.
+    Notification failures are isolated per recipient so an
+    auxiliary failure cannot invalidate the canonical match
+    or prevent the other member from being attempted.
+    """
+
+    match_id = (
+        match.get(
+            "_id"
+        )
+        if isinstance(
+            match,
+            dict,
+        )
+        else None
+    )
+
+    if match_id is None:
+        logger.warning(
+            (
+                "Durable new_match notification "
+                "skipped because the created "
+                "match has no identifier."
+            )
+        )
+
+        return
+
+    dedupe_key = (
+        "new_match:"
+        + str(
+            match_id
+        )
+    )
+
+    for recipient_user_id in (
+        first_user_id,
+        second_user_id,
+    ):
+        try:
+            create_notification(
+                user_id=(
+                    recipient_user_id
+                ),
+                notification_type=(
+                    "new_match"
+                ),
+                resource_type="match",
+                resource_id=match_id,
+                dedupe_key=dedupe_key,
+                now=(
+                    match.get(
+                        "created_at"
+                    )
+                ),
+            )
+
+        except Exception:
+            logger.warning(
+                (
+                    "Durable new_match notification "
+                    "creation failed after durable "
+                    "match creation."
+                ),
+                exc_info=True,
+            )
+
+
 def _emit_new_match_created_best_effort(
     *,
     match,
@@ -502,6 +582,12 @@ def submit_profile_action(
         )
         is True
     ):
+        _create_new_match_notifications_best_effort(
+            match=match,
+            first_user_id=actor,
+            second_user_id=target,
+        )
+
         _emit_new_match_created_best_effort(
             match=match,
             first_user_id=actor,
