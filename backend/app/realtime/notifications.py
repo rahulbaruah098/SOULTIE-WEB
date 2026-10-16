@@ -38,6 +38,12 @@ CONVERSATION_UPDATED_EVENT = (
 )
 
 
+
+NOTIFICATION_CREATED_EVENT = (
+    "notification.created"
+)
+
+
 ROUTING_ERROR_CODE = (
     "REALTIME_NOTIFICATION_ROUTING_UNAVAILABLE"
 )
@@ -539,3 +545,204 @@ __all__ = [
     "CONVERSATION_UPDATED_EVENT",
     "emit_conversation_update",
 ]
+
+
+def emit_notification_created(
+    *,
+    user_id,
+    notification,
+):
+    """
+    Emit one privacy-minimal durable Notification signal.
+
+    The notification must already have been authorized and
+    serialized by the Notification service. This function is
+    transport-only: it never creates, updates, or deletes durable
+    Notification state.
+    """
+
+    recipient_user_id = (
+        _normalize_user_id(
+            user_id
+        )
+    )
+
+    if not isinstance(
+        notification,
+        dict,
+    ):
+        raise RealtimeNotificationRoutingError()
+
+    notification_id = str(
+        notification.get(
+            "id"
+        )
+        or ""
+    ).strip()
+
+    notification_type = str(
+        notification.get(
+            "type"
+        )
+        or ""
+    ).strip()
+
+    title = notification.get(
+        "title"
+    )
+
+    body = notification.get(
+        "body"
+    )
+
+    created_at = str(
+        notification.get(
+            "created_at"
+        )
+        or ""
+    ).strip()
+
+    schema_version = notification.get(
+        "schema_version"
+    )
+
+    is_read = notification.get(
+        "is_read"
+    )
+
+    resource_type = notification.get(
+        "resource_type"
+    )
+
+    resource_id = notification.get(
+        "resource_id"
+    )
+
+    read_at = notification.get(
+        "read_at"
+    )
+
+    dismissed_at = notification.get(
+        "dismissed_at"
+    )
+
+    if (
+        not notification_id
+        or not notification_type
+        or not isinstance(
+            schema_version,
+            int,
+        )
+        or isinstance(
+            schema_version,
+            bool,
+        )
+        or schema_version < 1
+        or not isinstance(
+            title,
+            str,
+        )
+        or not title.strip()
+        or not isinstance(
+            body,
+            str,
+        )
+        or not body.strip()
+        or not created_at
+        or not isinstance(
+            is_read,
+            bool,
+        )
+    ):
+        raise RealtimeNotificationRoutingError()
+
+    if (
+        resource_type
+        is None
+    ) != (
+        resource_id
+        is None
+    ):
+        raise RealtimeNotificationRoutingError()
+
+    if resource_type is not None:
+        resource_type = str(
+            resource_type
+        ).strip()
+
+        resource_id = str(
+            resource_id
+        ).strip()
+
+        if (
+            not resource_type
+            or not resource_id
+        ):
+            raise RealtimeNotificationRoutingError()
+
+    for timestamp in (
+        read_at,
+        dismissed_at,
+    ):
+        if (
+            timestamp is not None
+            and (
+                not isinstance(
+                    timestamp,
+                    str,
+                )
+                or not timestamp.strip()
+            )
+        ):
+            raise RealtimeNotificationRoutingError()
+
+    safe_notification = {
+        "id": notification_id,
+        "schema_version": (
+            schema_version
+        ),
+        "type": notification_type,
+        "title": title,
+        "body": body,
+        "resource_type": (
+            resource_type
+        ),
+        "resource_id": (
+            resource_id
+        ),
+        "created_at": created_at,
+        "read_at": read_at,
+        "dismissed_at": (
+            dismissed_at
+        ),
+        "is_read": is_read,
+    }
+
+    payload = {
+        "notification": (
+            safe_notification
+        ),
+    }
+
+    try:
+        socketio.emit(
+            NOTIFICATION_CREATED_EVENT,
+            payload,
+            to=private_user_room_name(
+                recipient_user_id
+            ),
+            namespace="/",
+        )
+
+    except Exception as exc:
+        raise RealtimeNotificationRoutingError() from exc
+
+    return {
+        "event": (
+            NOTIFICATION_CREATED_EVENT
+        ),
+        "recipient_user_id": (
+            recipient_user_id
+        ),
+        "payload": payload,
+    }

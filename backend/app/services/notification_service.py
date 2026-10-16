@@ -3,6 +3,7 @@
 import base64
 import binascii
 import json
+import logging
 from datetime import (
     datetime,
     timezone,
@@ -11,6 +12,9 @@ from datetime import (
 from bson import ObjectId
 from bson.errors import InvalidId
 
+from app.realtime.notifications import (
+    emit_notification_created,
+)
 from app.repositories.chat_repository import (
     get_conversation_by_id_for_user,
 )
@@ -58,6 +62,11 @@ UNAVAILABLE_ACCOUNT_STATUSES = frozenset(
         "banned",
         "deleted",
     }
+)
+
+
+logger = logging.getLogger(
+    __name__
 )
 
 
@@ -737,6 +746,35 @@ def _cursor_from_document(
     }
 
 
+def _emit_notification_created_best_effort(
+    *,
+    user_id,
+    notification,
+):
+    """
+    Signal a newly-created durable Notification over realtime.
+
+    Durable MongoDB state remains authoritative. Realtime delivery
+    is supplementary and must never invalidate successful durable
+    Notification creation.
+    """
+
+    try:
+        emit_notification_created(
+            user_id=user_id,
+            notification=notification,
+        )
+
+    except Exception:
+        logger.warning(
+            (
+                "Realtime notification.created delivery "
+                "failed after durable Notification creation."
+            ),
+            exc_info=True,
+        )
+
+
 def create_notification(
     *,
     user_id,
@@ -870,6 +908,16 @@ def create_notification(
                 "be safely serialized."
             ),
             status_code=409,
+        )
+
+    if bool(
+        result.get(
+            "created"
+        )
+    ):
+        _emit_notification_created_best_effort(
+            user_id=recipient,
+            notification=payload,
         )
 
     return {

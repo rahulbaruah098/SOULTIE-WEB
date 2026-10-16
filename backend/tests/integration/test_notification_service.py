@@ -1661,3 +1661,380 @@ def test_dismissed_notification_is_not_visible_or_counted(
             ]
             == 0
         )
+
+
+def test_new_durable_notification_emits_realtime_once(
+    app,
+    monkeypatch,
+):
+    from app.services import notification_service
+
+    with app.app_context():
+        user_id = _create_user()
+
+        calls = []
+
+        def capture_realtime(
+            *,
+            user_id,
+            notification,
+        ):
+            calls.append(
+                {
+                    "user_id": user_id,
+                    "notification": dict(
+                        notification
+                    ),
+                }
+            )
+
+        monkeypatch.setattr(
+            notification_service,
+            "emit_notification_created",
+            capture_realtime,
+        )
+
+        result = create_notification(
+            user_id=user_id,
+            notification_type=(
+                "system_announcement"
+            ),
+            dedupe_key=(
+                "service-realtime:created"
+            ),
+            now=BASE_TIME,
+        )
+
+        assert (
+            result[
+                "created"
+            ]
+            is True
+        )
+
+        assert (
+            len(
+                calls
+            )
+            == 1
+        )
+
+        call = (
+            calls[
+                0
+            ]
+        )
+
+        assert (
+            call[
+                "user_id"
+            ]
+            == user_id
+        )
+
+        assert (
+            call[
+                "notification"
+            ]
+            == result[
+                "notification"
+            ]
+        )
+
+        assert set(
+            call[
+                "notification"
+            ]
+        ) == {
+            "id",
+            "schema_version",
+            "type",
+            "title",
+            "body",
+            "resource_type",
+            "resource_id",
+            "created_at",
+            "read_at",
+            "dismissed_at",
+            "is_read",
+        }
+
+        assert (
+            "user_id"
+            not in call[
+                "notification"
+            ]
+        )
+
+        assert (
+            "dedupe_key"
+            not in call[
+                "notification"
+            ]
+        )
+
+
+def test_notification_dedupe_retry_does_not_reemit_realtime(
+    app,
+    monkeypatch,
+):
+    from app.services import notification_service
+
+    with app.app_context():
+        user_id = _create_user()
+
+        calls = []
+
+        def capture_realtime(
+            *,
+            user_id,
+            notification,
+        ):
+            calls.append(
+                {
+                    "user_id": user_id,
+                    "notification": dict(
+                        notification
+                    ),
+                }
+            )
+
+        monkeypatch.setattr(
+            notification_service,
+            "emit_notification_created",
+            capture_realtime,
+        )
+
+        first = create_notification(
+            user_id=user_id,
+            notification_type=(
+                "system_announcement"
+            ),
+            dedupe_key=(
+                "service-realtime:dedupe"
+            ),
+            now=BASE_TIME,
+        )
+
+        retry = create_notification(
+            user_id=user_id,
+            notification_type=(
+                "system_announcement"
+            ),
+            dedupe_key=(
+                "service-realtime:dedupe"
+            ),
+            now=BASE_TIME,
+        )
+
+        assert (
+            first[
+                "created"
+            ]
+            is True
+        )
+
+        assert (
+            retry[
+                "created"
+            ]
+            is False
+        )
+
+        assert (
+            retry[
+                "notification"
+            ][
+                "id"
+            ]
+            == first[
+                "notification"
+            ][
+                "id"
+            ]
+        )
+
+        assert (
+            len(
+                calls
+            )
+            == 1
+        )
+
+
+def test_notification_preference_suppression_does_not_emit_realtime(
+    app,
+    monkeypatch,
+):
+    from app.repositories.notification_preferences_repository import (
+        update_notification_preferences_for_user,
+    )
+    from app.services import notification_service
+
+    with app.app_context():
+        user_id = _create_user()
+
+        calls = []
+
+        def capture_realtime(
+            *,
+            user_id,
+            notification,
+        ):
+            calls.append(
+                {
+                    "user_id": user_id,
+                    "notification": notification,
+                }
+            )
+
+        monkeypatch.setattr(
+            notification_service,
+            "emit_notification_created",
+            capture_realtime,
+        )
+
+        update_notification_preferences_for_user(
+            user_id,
+            disabled_types=[
+                "system_announcement",
+            ],
+        )
+
+        result = create_notification(
+            user_id=user_id,
+            notification_type=(
+                "system_announcement"
+            ),
+            dedupe_key=(
+                "service-realtime:suppressed"
+            ),
+            now=BASE_TIME,
+        )
+
+        assert (
+            result[
+                "created"
+            ]
+            is False
+        )
+
+        assert (
+            result[
+                "notification"
+            ]
+            is None
+        )
+
+        assert calls == []
+
+        page = list_my_notifications(
+            user_id,
+            limit=10,
+        )
+
+        assert (
+            page[
+                "returned"
+            ]
+            == 0
+        )
+
+
+def test_realtime_failure_does_not_invalidate_durable_notification(
+    app,
+    monkeypatch,
+    caplog,
+):
+    import logging
+
+    from app.services import notification_service
+
+    with app.app_context():
+        user_id = _create_user()
+
+        caplog.set_level(
+            logging.WARNING,
+            logger=(
+                notification_service.__name__
+            ),
+        )
+
+        def fail_realtime(
+            **kwargs,
+        ):
+            raise RuntimeError(
+                "simulated realtime failure"
+            )
+
+        monkeypatch.setattr(
+            notification_service,
+            "emit_notification_created",
+            fail_realtime,
+        )
+
+        result = create_notification(
+            user_id=user_id,
+            notification_type=(
+                "system_announcement"
+            ),
+            dedupe_key=(
+                "service-realtime:failure"
+            ),
+            now=BASE_TIME,
+        )
+
+        assert (
+            result[
+                "created"
+            ]
+            is True
+        )
+
+        assert (
+            result[
+                "notification"
+            ]
+            is not None
+        )
+
+        page = list_my_notifications(
+            user_id,
+            limit=10,
+        )
+
+        assert (
+            page[
+                "returned"
+            ]
+            == 1
+        )
+
+        assert (
+            page[
+                "notifications"
+            ][
+                0
+            ][
+                "id"
+            ]
+            == result[
+                "notification"
+            ][
+                "id"
+            ]
+        )
+
+        messages = [
+            record.getMessage()
+            for record in caplog.records
+        ]
+
+        assert any(
+            (
+                "Realtime notification.created delivery "
+                "failed after durable Notification creation."
+            )
+            in message
+            for message in messages
+        )

@@ -1168,3 +1168,344 @@ def test_match_created_rejects_malformed_match(
         )
 
     assert emitted == []
+
+
+def _durable_notification_realtime_payload(
+    *,
+    resource=True,
+):
+    notification = {
+        "id": "507f1f77bcf86cd799439012",
+        "schema_version": 1,
+        "type": "new_message",
+        "title": "New message",
+        "body": "You have a new message.",
+        "resource_type": None,
+        "resource_id": None,
+        "created_at": "2026-10-16T04:00:00+00:00",
+        "read_at": None,
+        "dismissed_at": None,
+        "is_read": False,
+        "user_id": "507f1f77bcf86cd799439011",
+        "dedupe_key": (
+            "new_message:"
+            "507f1f77bcf86cd799439014"
+        ),
+        "secret": "MUST_NOT_LEAK",
+        "private_culture": "MUST_NOT_LEAK",
+    }
+
+    if resource:
+        notification[
+            "resource_type"
+        ] = "conversation"
+
+        notification[
+            "resource_id"
+        ] = "507f1f77bcf86cd799439013"
+
+    return notification
+
+
+def test_notification_created_event_name():
+    from app.realtime import notifications as notification_realtime
+
+    assert (
+        notification_realtime.NOTIFICATION_CREATED_EVENT
+        == "notification.created"
+    )
+
+
+def test_notification_created_targets_private_room_with_allowlisted_payload(
+    monkeypatch,
+):
+    from app.realtime import notifications as notification_realtime
+
+    emissions = []
+
+    def fake_emit(
+        event,
+        payload,
+        *,
+        to,
+        namespace,
+    ):
+        emissions.append(
+            {
+                "event": event,
+                "payload": payload,
+                "to": to,
+                "namespace": namespace,
+            }
+        )
+
+    monkeypatch.setattr(
+        notification_realtime.socketio,
+        "emit",
+        fake_emit,
+    )
+
+    recipient_id = (
+        "507f1f77bcf86cd799439011"
+    )
+
+    result = (
+        notification_realtime.emit_notification_created(
+            user_id=recipient_id,
+            notification=(
+                _durable_notification_realtime_payload()
+            ),
+        )
+    )
+
+    assert (
+        len(
+            emissions
+        )
+        == 1
+    )
+
+    emission = (
+        emissions[
+            0
+        ]
+    )
+
+    assert (
+        emission[
+            "event"
+        ]
+        == "notification.created"
+    )
+
+    assert (
+        emission[
+            "to"
+        ]
+        == (
+            "user:"
+            + recipient_id
+        )
+    )
+
+    assert (
+        emission[
+            "namespace"
+        ]
+        == "/"
+    )
+
+    payload = (
+        emission[
+            "payload"
+        ][
+            "notification"
+        ]
+    )
+
+    assert set(
+        payload
+    ) == {
+        "id",
+        "schema_version",
+        "type",
+        "title",
+        "body",
+        "resource_type",
+        "resource_id",
+        "created_at",
+        "read_at",
+        "dismissed_at",
+        "is_read",
+    }
+
+    for forbidden in (
+        "user_id",
+        "dedupe_key",
+        "secret",
+        "private_culture",
+    ):
+        assert (
+            forbidden
+            not in payload
+        )
+
+    assert (
+        result[
+            "event"
+        ]
+        == "notification.created"
+    )
+
+    assert (
+        result[
+            "recipient_user_id"
+        ]
+        == recipient_id
+    )
+
+
+def test_notification_created_supports_resource_less_notification(
+    monkeypatch,
+):
+    from app.realtime import notifications as notification_realtime
+
+    emissions = []
+
+    def fake_emit(
+        event,
+        payload,
+        *,
+        to,
+        namespace,
+    ):
+        emissions.append(
+            payload
+        )
+
+    monkeypatch.setattr(
+        notification_realtime.socketio,
+        "emit",
+        fake_emit,
+    )
+
+    notification = (
+        _durable_notification_realtime_payload(
+            resource=False,
+        )
+    )
+
+    notification[
+        "type"
+    ] = "system_announcement"
+
+    notification[
+        "title"
+    ] = "Xuoroni update"
+
+    notification[
+        "body"
+    ] = "A platform update is available."
+
+    notification_realtime.emit_notification_created(
+        user_id="507f1f77bcf86cd799439011",
+        notification=notification,
+    )
+
+    assert (
+        len(
+            emissions
+        )
+        == 1
+    )
+
+    payload = (
+        emissions[
+            0
+        ][
+            "notification"
+        ]
+    )
+
+    assert (
+        payload[
+            "resource_type"
+        ]
+        is None
+    )
+
+    assert (
+        payload[
+            "resource_id"
+        ]
+        is None
+    )
+
+
+def test_notification_created_rejects_partial_resource_without_emitting(
+    monkeypatch,
+):
+    from app.realtime import notifications as notification_realtime
+
+    emissions = []
+
+    def fake_emit(
+        *args,
+        **kwargs,
+    ):
+        emissions.append(
+            (
+                args,
+                kwargs,
+            )
+        )
+
+    monkeypatch.setattr(
+        notification_realtime.socketio,
+        "emit",
+        fake_emit,
+    )
+
+    notification = (
+        _durable_notification_realtime_payload()
+    )
+
+    notification[
+        "resource_id"
+    ] = None
+
+    try:
+        notification_realtime.emit_notification_created(
+            user_id="507f1f77bcf86cd799439011",
+            notification=notification,
+        )
+
+    except (
+        notification_realtime.RealtimeNotificationRoutingError
+    ):
+        pass
+
+    else:
+        raise AssertionError(
+            "Partial resource reference was accepted."
+        )
+
+    assert emissions == []
+
+
+def test_notification_created_wraps_socket_failure(
+    monkeypatch,
+):
+    from app.realtime import notifications as notification_realtime
+
+    def fail_emit(
+        *args,
+        **kwargs,
+    ):
+        raise RuntimeError(
+            "simulated Socket.IO failure"
+        )
+
+    monkeypatch.setattr(
+        notification_realtime.socketio,
+        "emit",
+        fail_emit,
+    )
+
+    try:
+        notification_realtime.emit_notification_created(
+            user_id="507f1f77bcf86cd799439011",
+            notification=(
+                _durable_notification_realtime_payload()
+            ),
+        )
+
+    except (
+        notification_realtime.RealtimeNotificationRoutingError
+    ):
+        pass
+
+    else:
+        raise AssertionError(
+            "Socket.IO failure was not wrapped."
+        )
