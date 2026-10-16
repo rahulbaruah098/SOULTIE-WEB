@@ -52,6 +52,10 @@ from app.schemas.notification import (
     normalize_notification_resource,
     serialize_notification_for_user,
 )
+from app.services.notification_delivery_service import (
+    provision_notification_deliveries,
+)
+
 
 
 NOTIFICATION_CURSOR_MAX_LENGTH = 512
@@ -746,6 +750,41 @@ def _cursor_from_document(
     }
 
 
+def _provision_notification_deliveries_best_effort(
+    notification,
+):
+    """
+    Provision background delivery state without invalidating
+    the already durable Notification.
+    """
+
+    try:
+        return provision_notification_deliveries(
+            notification,
+            now=(
+                notification.get(
+                    "created_at"
+                )
+                if isinstance(
+                    notification,
+                    dict,
+                )
+                else None
+            ),
+        )
+
+    except Exception:
+        logger.warning(
+            (
+                "Background Notification delivery provisioning "
+                "failed after durable Notification creation."
+            ),
+            exc_info=True,
+        )
+
+        return None
+
+
 def _emit_notification_created_best_effort(
     *,
     user_id,
@@ -909,6 +948,10 @@ def create_notification(
             ),
             status_code=409,
         )
+
+    _provision_notification_deliveries_best_effort(
+        notification
+    )
 
     if bool(
         result.get(
@@ -1397,11 +1440,7 @@ def update_my_notification_preferences(
         preferences = (
             update_notification_preferences_for_user(
                 owner_id,
-                disabled_types=(
-                    patch[
-                        "disabled_types"
-                    ]
-                ),
+                **patch,
                 now=now,
             )
         )

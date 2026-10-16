@@ -34,6 +34,7 @@ from app.api.v1.chats.routes import (
 
 
 from .notifications.routes import notifications_bp
+from .push_devices import push_devices_bp
 
 api_v1_bp = Blueprint(
     "api_v1",
@@ -83,6 +84,10 @@ api_v1_bp.register_blueprint(
 
 api_v1_bp.register_blueprint(
     notifications_bp
+)
+
+api_v1_bp.register_blueprint(
+    push_devices_bp
 )
 
 __all__ = [

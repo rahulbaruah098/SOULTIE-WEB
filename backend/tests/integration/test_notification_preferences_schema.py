@@ -235,11 +235,11 @@ def test_unknown_notification_type_cannot_be_disabled():
         "invalid",
         {},
         {
-            "push_enabled": False,
+            "push_enabled": "false",
         },
         {
             "disabled_types": [],
-            "email_enabled": False,
+            "email_enabled": "false",
         },
     ],
 )

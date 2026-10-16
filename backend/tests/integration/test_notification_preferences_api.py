@@ -492,7 +492,7 @@ def test_notification_preferences_api_rejects_malformed_body(
     [
         {},
         {
-            "push_enabled": False,
+            "push_enabled": "false",
         },
         {
             "disabled_types": [
@@ -508,7 +508,7 @@ def test_notification_preferences_api_rejects_invalid_preferences(
 ):
     phone_by_case = {
         "{}": "9876543204",
-        "{'push_enabled': False}": (
+        "{'push_enabled': 'false'}": (
             "9876543205"
         ),
         (

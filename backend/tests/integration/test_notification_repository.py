@@ -1297,3 +1297,399 @@ def test_invalid_recipient_operations_fail_closed(
             )
             == 0
         )
+
+
+def test_reconciliation_scanner_empty_state(
+    app,
+):
+    from app.repositories.notification_repository import (
+        list_notifications_for_delivery_reconciliation,
+    )
+
+    with app.app_context():
+        mongo.db.notifications.delete_many(
+            {}
+        )
+
+        result = (
+            list_notifications_for_delivery_reconciliation(
+                limit=10
+            )
+        )
+
+    assert result == {
+        "notifications": [],
+        "has_more": False,
+        "next_cursor": None,
+    }
+
+
+def test_reconciliation_scanner_is_global_and_chronological(
+    app,
+):
+    from datetime import (
+        datetime,
+        timedelta,
+        timezone,
+    )
+
+    from bson import ObjectId
+
+    from app.repositories.notification_repository import (
+        list_notifications_for_delivery_reconciliation,
+    )
+
+    from app.schemas.notification import (
+        build_notification_document,
+    )
+
+    base = datetime(
+        2026,
+        10,
+        16,
+        10,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    ids = [
+        ObjectId(
+            "507f1f77bcf86cd799439041"
+        ),
+        ObjectId(
+            "507f1f77bcf86cd799439042"
+        ),
+        ObjectId(
+            "507f1f77bcf86cd799439043"
+        ),
+    ]
+
+    first_user = ObjectId()
+    second_user = ObjectId()
+
+    documents = []
+
+    first = build_notification_document(
+        user_id=first_user,
+        notification_type="system_announcement",
+        now=base,
+    )
+
+    first[
+        "_id"
+    ] = ids[
+        1
+    ]
+
+    documents.append(
+        first
+    )
+
+    second = build_notification_document(
+        user_id=second_user,
+        notification_type="system_announcement",
+        now=base,
+    )
+
+    second[
+        "_id"
+    ] = ids[
+        0
+    ]
+
+    documents.append(
+        second
+    )
+
+    third = build_notification_document(
+        user_id=first_user,
+        notification_type="system_announcement",
+        now=(
+            base
+            + timedelta(
+                seconds=1
+            )
+        ),
+    )
+
+    third[
+        "_id"
+    ] = ids[
+        2
+    ]
+
+    documents.append(
+        third
+    )
+
+    with app.app_context():
+        mongo.db.notifications.insert_many(
+            documents
+        )
+
+        result = (
+            list_notifications_for_delivery_reconciliation(
+                limit=10
+            )
+        )
+
+    assert [
+        item[
+            "_id"
+        ]
+        for item in result[
+            "notifications"
+        ]
+    ] == ids
+
+    assert {
+        item[
+            "user_id"
+        ]
+        for item in result[
+            "notifications"
+        ]
+    } == {
+        first_user,
+        second_user,
+    }
+
+    assert result[
+        "has_more"
+    ] is False
+
+    assert result[
+        "next_cursor"
+    ] is None
+
+
+def test_reconciliation_scanner_cursor_pagination_is_stable(
+    app,
+):
+    from datetime import (
+        datetime,
+        timedelta,
+        timezone,
+    )
+
+    from bson import ObjectId
+
+    from app.repositories.notification_repository import (
+        list_notifications_for_delivery_reconciliation,
+    )
+
+    from app.schemas.notification import (
+        build_notification_document,
+    )
+
+    base = datetime(
+        2026,
+        10,
+        16,
+        10,
+        30,
+        tzinfo=timezone.utc,
+    )
+
+    ids = [
+        ObjectId(
+            "507f1f77bcf86cd799439051"
+        ),
+        ObjectId(
+            "507f1f77bcf86cd799439052"
+        ),
+        ObjectId(
+            "507f1f77bcf86cd799439053"
+        ),
+    ]
+
+    user_id = ObjectId()
+
+    documents = []
+
+    for index, notification_id in enumerate(
+        ids
+    ):
+        timestamp = (
+            base
+            if index < 2
+            else (
+                base
+                + timedelta(
+                    seconds=1
+                )
+            )
+        )
+
+        document = (
+            build_notification_document(
+                user_id=user_id,
+                notification_type="system_announcement",
+                now=timestamp,
+            )
+        )
+
+        document[
+            "_id"
+        ] = notification_id
+
+        documents.append(
+            document
+        )
+
+    with app.app_context():
+        mongo.db.notifications.insert_many(
+            documents
+        )
+
+        first_page = (
+            list_notifications_for_delivery_reconciliation(
+                limit=2
+            )
+        )
+
+        cursor = first_page[
+            "next_cursor"
+        ]
+
+        second_page = (
+            list_notifications_for_delivery_reconciliation(
+                limit=2,
+                after_created_at=(
+                    cursor[
+                        "created_at"
+                    ]
+                ),
+                after_notification_id=(
+                    cursor[
+                        "notification_id"
+                    ]
+                ),
+            )
+        )
+
+    assert [
+        item[
+            "_id"
+        ]
+        for item in first_page[
+            "notifications"
+        ]
+    ] == ids[
+        :2
+    ]
+
+    assert first_page[
+        "has_more"
+    ] is True
+
+    assert cursor is not None
+
+    assert cursor[
+        "created_at"
+    ].tzinfo is not None
+
+    assert cursor[
+        "notification_id"
+    ] == ids[
+        1
+    ]
+
+    assert [
+        item[
+            "_id"
+        ]
+        for item in second_page[
+            "notifications"
+        ]
+    ] == [
+        ids[
+            2
+        ]
+    ]
+
+    assert second_page[
+        "has_more"
+    ] is False
+
+    assert second_page[
+        "next_cursor"
+    ] is None
+
+
+def test_reconciliation_scanner_rejects_malformed_cursor(
+    app,
+):
+    from datetime import (
+        datetime,
+        timezone,
+    )
+
+    from bson import ObjectId
+
+    from app.repositories.notification_repository import (
+        list_notifications_for_delivery_reconciliation,
+    )
+
+    aware = datetime(
+        2026,
+        10,
+        16,
+        11,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    naive = datetime(
+        2026,
+        10,
+        16,
+        11,
+        0,
+    )
+
+    with app.app_context():
+        with pytest.raises(
+            ValueError,
+            match="must include both",
+        ):
+            list_notifications_for_delivery_reconciliation(
+                after_created_at=aware,
+            )
+
+        with pytest.raises(
+            ValueError,
+            match="must include both",
+        ):
+            list_notifications_for_delivery_reconciliation(
+                after_notification_id=ObjectId(),
+            )
+
+        with pytest.raises(
+            ValueError,
+            match="Invalid Notification reconciliation",
+        ):
+            list_notifications_for_delivery_reconciliation(
+                after_created_at=aware,
+                after_notification_id="invalid",
+            )
+
+        normalized = (
+            list_notifications_for_delivery_reconciliation(
+                after_created_at=naive,
+                after_notification_id=ObjectId(),
+            )
+        )
+
+        assert isinstance(
+            normalized,
+            dict,
+        )
+
+        assert set(
+            normalized
+        ) == {
+            "notifications",
+            "has_more",
+            "next_cursor",
+        }

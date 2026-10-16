@@ -195,10 +195,93 @@ def build_notification_preferences_document(
     }
 
 
+
+NOTIFICATION_BACKGROUND_CHANNEL_DEFAULTS = {
+    "email": False,
+    "push": True,
+}
+
+
+def normalize_notification_channel(
+    value,
+):
+    if not isinstance(
+        value,
+        str,
+    ):
+        raise ValueError(
+            "Invalid Notification delivery channel."
+        )
+
+    channel = (
+        value
+        .strip()
+        .lower()
+    )
+
+    if (
+        channel
+        not in NOTIFICATION_BACKGROUND_CHANNEL_DEFAULTS
+    ):
+        raise ValueError(
+            "Unsupported Notification delivery channel."
+        )
+
+    return channel
+
+
+def normalize_notification_channel_enabled(
+    value,
+    field_name,
+):
+    if not isinstance(
+        value,
+        bool,
+    ):
+        raise ValueError(
+            field_name
+            + " must be true or false."
+        )
+
+    return value
+
+
+def notification_channel_is_enabled(
+    preferences,
+    channel,
+):
+    channel = normalize_notification_channel(
+        channel
+    )
+
+    default = (
+        NOTIFICATION_BACKGROUND_CHANNEL_DEFAULTS[
+            channel
+        ]
+    )
+
+    if preferences is None:
+        return default
+
+    field_name = (
+        channel
+        + "_enabled"
+    )
+
+    return normalize_notification_channel_enabled(
+        preferences.get(
+            field_name,
+            default,
+        ),
+        field_name,
+    )
+
+
+
 def normalize_notification_preferences_patch(
     payload,
 ):
-    """Validate the current owner-editable Notification Preferences payload."""
+    """Validate owner-editable Notification Preferences fields."""
 
     if not isinstance(
         payload,
@@ -211,6 +294,8 @@ def normalize_notification_preferences_patch(
 
     allowed = {
         "disabled_types",
+        "email_enabled",
+        "push_enabled",
     }
 
     unknown = (
@@ -225,24 +310,59 @@ def normalize_notification_preferences_patch(
             "Unsupported Notification Preferences field."
         )
 
-    if (
-        "disabled_types"
-        not in payload
-    ):
+    if not payload:
         raise ValueError(
             "At least one Notification Preferences "
             "field is required."
         )
 
-    return {
-        "disabled_types": (
+    normalized = {}
+
+    if (
+        "disabled_types"
+        in payload
+    ):
+        normalized[
+            "disabled_types"
+        ] = (
             normalize_disabled_notification_types(
                 payload[
                     "disabled_types"
                 ]
             )
-        ),
-    }
+        )
+
+    if (
+        "email_enabled"
+        in payload
+    ):
+        normalized[
+            "email_enabled"
+        ] = (
+            normalize_notification_channel_enabled(
+                payload[
+                    "email_enabled"
+                ],
+                "email_enabled",
+            )
+        )
+
+    if (
+        "push_enabled"
+        in payload
+    ):
+        normalized[
+            "push_enabled"
+        ] = (
+            normalize_notification_channel_enabled(
+                payload[
+                    "push_enabled"
+                ],
+                "push_enabled",
+            )
+        )
+
+    return normalized
 
 
 def notification_type_is_enabled(
@@ -279,15 +399,16 @@ def notification_type_is_enabled(
     )
 
 
+
 def serialize_notification_preferences_for_owner(
     preferences,
 ):
-    """Return the privacy-minimal owner-facing Notification Preferences."""
+    """Return privacy-minimal owner-facing Notification Preferences."""
 
     if preferences is None:
         return None
 
-    return {
+    payload = {
         "schema_version": (
             preferences.get(
                 "schema_version",
@@ -308,6 +429,38 @@ def serialize_notification_preferences_for_owner(
             ),
         },
     }
+
+    # Preserve the existing response shape for old/default records.
+    # Once a user explicitly configures a background channel, expose
+    # both channel states with backward-compatible defaults.
+    if (
+        "email_enabled"
+        in preferences
+        or "push_enabled"
+        in preferences
+    ):
+        payload[
+            "channels"
+        ] = {
+            "email": {
+                "enabled": (
+                    notification_channel_is_enabled(
+                        preferences,
+                        "email",
+                    )
+                ),
+            },
+            "push": {
+                "enabled": (
+                    notification_channel_is_enabled(
+                        preferences,
+                        "push",
+                    )
+                ),
+            },
+        }
+
+    return payload
 
 
 __all__ = [

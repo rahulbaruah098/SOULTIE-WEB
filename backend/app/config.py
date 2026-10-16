@@ -98,6 +98,11 @@ class BaseConfig:
         "redis://localhost:6379/2",
     )
 
+    # Notification scheduling is explicitly opt-in.
+    NOTIFICATION_CELERY_BEAT_ENABLED = _env_bool(
+        "NOTIFICATION_CELERY_BEAT_ENABLED", False
+    )
+
     JWT_SECRET_KEY = os.getenv(
         "JWT_SECRET_KEY",
         "dev-only-jwt-secret-change-me",

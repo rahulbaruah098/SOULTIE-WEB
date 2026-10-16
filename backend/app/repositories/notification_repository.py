@@ -551,6 +551,185 @@ def list_notifications_for_user(
     }
 
 
+def list_notifications_for_delivery_reconciliation(
+    *,
+    limit=MAX_NOTIFICATION_PAGE_SIZE,
+    after_created_at=None,
+    after_notification_id=None,
+):
+    """
+    Scan durable Notifications chronologically for internal delivery repair.
+
+    This repository boundary is system-only. It is not recipient-facing and
+    must not be exposed through the Notification HTTP API.
+    """
+
+    parsed_limit = (
+        _normalize_page_size(
+            limit
+        )
+    )
+
+    has_created_cursor = (
+        after_created_at
+        is not None
+    )
+
+    has_id_cursor = (
+        after_notification_id
+        is not None
+    )
+
+    if (
+        has_created_cursor
+        != has_id_cursor
+    ):
+        raise ValueError(
+            "Notification reconciliation cursor "
+            "must include both created_at and notification_id."
+        )
+
+    query = {}
+
+    if has_created_cursor:
+        cursor_created_at = (
+            _normalize_timestamp(
+                after_created_at,
+                (
+                    "notification reconciliation "
+                    "created_at"
+                ),
+            )
+        )
+
+        cursor_notification_id = (
+            _to_object_id(
+                after_notification_id
+            )
+        )
+
+        if cursor_notification_id is None:
+            raise ValueError(
+                "Invalid Notification reconciliation notification ID."
+            )
+
+        query = {
+            "$or": [
+                {
+                    "created_at": {
+                        "$gt": (
+                            cursor_created_at
+                        ),
+                    },
+                },
+                {
+                    "created_at": (
+                        cursor_created_at
+                    ),
+                    "_id": {
+                        "$gt": (
+                            cursor_notification_id
+                        ),
+                    },
+                },
+            ]
+        }
+
+    documents = list(
+        mongo.db.notifications.find(
+            query
+        )
+        .sort(
+            [
+                (
+                    "created_at",
+                    1,
+                ),
+                (
+                    "_id",
+                    1,
+                ),
+            ]
+        )
+        .hint(
+            "notification_delivery_reconciliation_scan"
+        )
+        .limit(
+            parsed_limit
+            + 1
+        )
+    )
+
+    has_more = (
+        len(
+            documents
+        )
+        > parsed_limit
+    )
+
+    if has_more:
+        documents = documents[
+            :parsed_limit
+        ]
+
+    next_cursor = None
+
+    if (
+        has_more
+        and documents
+    ):
+        last = documents[
+            -1
+        ]
+
+        cursor_created_at = last.get(
+            "created_at"
+        )
+
+        if not isinstance(
+            cursor_created_at,
+            datetime,
+        ):
+            raise ValueError(
+                "Notification reconciliation record "
+                "has invalid created_at."
+            )
+
+        if (
+            cursor_created_at.tzinfo
+            is None
+        ):
+            cursor_created_at = (
+                cursor_created_at.replace(
+                    tzinfo=timezone.utc
+                )
+            )
+
+        else:
+            cursor_created_at = (
+                cursor_created_at.astimezone(
+                    timezone.utc
+                )
+            )
+
+        next_cursor = {
+            "created_at": (
+                cursor_created_at
+            ),
+            "notification_id": (
+                last[
+                    "_id"
+                ]
+            ),
+        }
+
+    return {
+        "notifications": documents,
+        "has_more": has_more,
+        "next_cursor": next_cursor,
+    }
+
+
 def count_unread_notifications(
     user_id,
 ):
@@ -709,6 +888,7 @@ __all__ = [
     "create_notification_idempotent",
     "get_notification_by_id_for_user",
     "list_notifications_for_user",
+    "list_notifications_for_delivery_reconciliation",
     "mark_all_notifications_read",
     "mark_notification_read",
 ]

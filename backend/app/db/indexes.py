@@ -125,6 +125,32 @@ def ensure_indexes(db) -> list[str]:
         )
     )
 
+
+    # Active push tokens must have a single registered owner.
+    # Revoked devices unset the token and its hash.
+    created.append(
+        db.user_devices.create_index(
+            [("push_token_hash", ASCENDING)],
+            unique=True,
+            name="user_devices_active_push_token_unique",
+            partialFilterExpression={
+                "push_token_hash": {"$type": "string"},
+            },
+        )
+    )
+
+    # Fast selection of current push-capable user devices.
+    created.append(
+        db.user_devices.create_index(
+            [
+                ("user_id", ASCENDING),
+                ("push_enabled", ASCENDING),
+                ("revoked_at", ASCENDING),
+            ],
+            name="user_devices_push_owner_lookup",
+        )
+    )
+
     # =====================================================
     # PROFILE / DISCOVERY
     # =====================================================
@@ -569,6 +595,68 @@ def ensure_indexes(db) -> list[str]:
                     "$type": "string",
                 },
             },
+        )
+    )
+
+    # System/background reconciliation scans durable Notifications
+    # chronologically so missing delivery rows can be repaired after
+    # a process dies between Notification creation and provisioning.
+    created.append(
+        db.notifications.create_index(
+            [
+                ("created_at", ASCENDING),
+                ("_id", ASCENDING),
+            ],
+            name=(
+                "notification_delivery_reconciliation_scan"
+            ),
+        )
+    )
+
+    # =====================================================
+    # NOTIFICATION DELIVERY / BACKGROUND DISPATCH
+    # =====================================================
+
+    # One durable supplementary delivery record is allowed
+    # per Notification/channel pair.
+    created.append(
+        db.notification_deliveries.create_index(
+            [
+                ("notification_id", ASCENDING),
+                ("channel", ASCENDING),
+            ],
+            unique=True,
+            name=(
+                "notification_delivery_notification_channel_unique"
+            ),
+        )
+    )
+
+    # Workers claim the earliest due pending/retry delivery.
+    created.append(
+        db.notification_deliveries.create_index(
+            [
+                ("status", ASCENDING),
+                ("next_attempt_at", ASCENDING),
+                ("created_at", ASCENDING),
+            ],
+            name=(
+                "notification_delivery_pending_claim"
+            ),
+        )
+    )
+
+    # Expired processing leases can be recovered after
+    # worker crash, timeout, or process termination.
+    created.append(
+        db.notification_deliveries.create_index(
+            [
+                ("status", ASCENDING),
+                ("lease_expires_at", ASCENDING),
+            ],
+            name=(
+                "notification_delivery_lease_recovery"
+            ),
         )
     )
 

@@ -116,13 +116,20 @@ def ensure_notification_preferences_for_user(
         return existing
 
 
+
+_UNSET_NOTIFICATION_PREFERENCE = object()
+
+
+
 def update_notification_preferences_for_user(
     user_id,
     *,
-    disabled_types,
+    disabled_types=_UNSET_NOTIFICATION_PREFERENCE,
+    email_enabled=_UNSET_NOTIFICATION_PREFERENCE,
+    push_enabled=_UNSET_NOTIFICATION_PREFERENCE,
     now=None,
 ):
-    """Upsert the canonical user-owned in-app Notification Preferences."""
+    """Atomically patch canonical user-owned Notification Preferences."""
 
     user_object_id = (
         _to_object_id(
@@ -133,44 +140,123 @@ def update_notification_preferences_for_user(
     if user_object_id is None:
         return None
 
+    if (
+        disabled_types
+        is _UNSET_NOTIFICATION_PREFERENCE
+        and email_enabled
+        is _UNSET_NOTIFICATION_PREFERENCE
+        and push_enabled
+        is _UNSET_NOTIFICATION_PREFERENCE
+    ):
+        raise ValueError(
+            "At least one Notification Preferences "
+            "field is required."
+        )
+
     candidate = (
         build_notification_preferences_document(
             user_id=user_object_id,
-            disabled_types=disabled_types,
+            disabled_types=(
+                []
+                if disabled_types
+                is _UNSET_NOTIFICATION_PREFERENCE
+                else disabled_types
+            ),
             now=now,
         )
     )
+
+    if (
+        email_enabled
+        is not _UNSET_NOTIFICATION_PREFERENCE
+        and not isinstance(
+            email_enabled,
+            bool,
+        )
+    ):
+        raise ValueError(
+            "email_enabled must be true or false."
+        )
+
+    if (
+        push_enabled
+        is not _UNSET_NOTIFICATION_PREFERENCE
+        and not isinstance(
+            push_enabled,
+            bool,
+        )
+    ):
+        raise ValueError(
+            "push_enabled must be true or false."
+        )
+
+    set_fields = {
+        "schema_version": (
+            candidate[
+                "schema_version"
+            ]
+        ),
+        "updated_at": (
+            candidate[
+                "updated_at"
+            ]
+        ),
+    }
+
+    if (
+        disabled_types
+        is not _UNSET_NOTIFICATION_PREFERENCE
+    ):
+        set_fields[
+            "disabled_types"
+        ] = (
+            candidate[
+                "disabled_types"
+            ]
+        )
+
+    if (
+        email_enabled
+        is not _UNSET_NOTIFICATION_PREFERENCE
+    ):
+        set_fields[
+            "email_enabled"
+        ] = email_enabled
+
+    if (
+        push_enabled
+        is not _UNSET_NOTIFICATION_PREFERENCE
+    ):
+        set_fields[
+            "push_enabled"
+        ] = push_enabled
+
+    set_on_insert = {
+        "user_id": user_object_id,
+        "created_at": (
+            candidate[
+                "created_at"
+            ]
+        ),
+    }
+
+    # Preserve the original in-app default only. Background channel
+    # defaults remain policy defaults until explicitly configured.
+    if (
+        disabled_types
+        is _UNSET_NOTIFICATION_PREFERENCE
+    ):
+        set_on_insert[
+            "disabled_types"
+        ] = []
 
     query = {
         "user_id": user_object_id,
     }
 
     update = {
-        "$set": {
-            "schema_version": (
-                candidate[
-                    "schema_version"
-                ]
-            ),
-            "disabled_types": (
-                candidate[
-                    "disabled_types"
-                ]
-            ),
-            "updated_at": (
-                candidate[
-                    "updated_at"
-                ]
-            ),
-        },
-        "$setOnInsert": {
-            "user_id": user_object_id,
-            "created_at": (
-                candidate[
-                    "created_at"
-                ]
-            ),
-        },
+        "$set": set_fields,
+        "$setOnInsert": set_on_insert,
     }
 
     try:
@@ -186,14 +272,11 @@ def update_notification_preferences_for_user(
         )
 
     except DuplicateKeyError:
-        # Retry against the record created by the concurrent winner.
         updated = (
             mongo.db.notification_preferences.find_one_and_update(
                 query,
                 {
-                    "$set": update[
-                        "$set"
-                    ],
+                    "$set": set_fields,
                 },
                 return_document=(
                     ReturnDocument.AFTER

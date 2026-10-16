@@ -377,7 +377,7 @@ def test_update_notification_preferences_persists_canonical_state(
     [
         {},
         {
-            "push_enabled": False,
+            "push_enabled": "false",
         },
         {
             "disabled_types": [
