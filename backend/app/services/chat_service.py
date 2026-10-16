@@ -1,5 +1,7 @@
 """Business rules and access control for Xuoroni chat."""
 
+import logging
+
 from bson import ObjectId
 from bson.errors import InvalidId
 
@@ -25,6 +27,9 @@ from app.repositories.safety_repository import (
 from app.repositories.user_repository import (
     get_user_by_id,
 )
+from app.services.notification_service import (
+    create_notification,
+)
 from app.schemas.chat import (
     build_message_page,
     normalize_before_sequence,
@@ -36,6 +41,11 @@ from app.schemas.chat import (
     normalize_message_type,
     serialize_chat_message,
     serialize_conversation_for_user,
+)
+
+
+logger = logging.getLogger(
+    __name__
 )
 
 
@@ -926,6 +936,69 @@ def list_my_messages(
     }
 
 
+def _create_new_message_notification_best_effort(
+    *,
+    message,
+    recipient_user_id,
+    conversation_id,
+):
+    """
+    Create one durable privacy-minimal new_message Notification.
+
+    The Chat message is already durable before this helper runs.
+    Notification failure must not undo or invalidate that message.
+    """
+
+    message_id = (
+        message.get(
+            "_id"
+        )
+        if isinstance(
+            message,
+            dict,
+        )
+        else None
+    )
+
+    if message_id is None:
+        logger.warning(
+            (
+                "Durable new_message Notification "
+                "skipped because the created "
+                "message has no identifier."
+            )
+        )
+
+        return
+
+    try:
+        create_notification(
+            user_id=recipient_user_id,
+            notification_type="new_message",
+            resource_type="conversation",
+            resource_id=conversation_id,
+            dedupe_key=(
+                "new_message:"
+                + str(
+                    message_id
+                )
+            ),
+            now=message.get(
+                "sent_at"
+            ),
+        )
+
+    except Exception:
+        logger.warning(
+            (
+                "Durable new_message Notification "
+                "creation failed after durable "
+                "Chat message creation."
+            ),
+            exc_info=True,
+        )
+
+
 def send_chat_message(
     *,
     user_id,
@@ -1057,6 +1130,22 @@ def send_chat_message(
                 "is closed."
             ),
             status_code=409,
+        )
+
+    if (
+        result.get(
+            "created"
+        )
+        is True
+    ):
+        _create_new_message_notification_best_effort(
+            message=message,
+            recipient_user_id=recipient_id,
+            conversation_id=(
+                conversation[
+                    "_id"
+                ]
+            ),
         )
 
     return {
