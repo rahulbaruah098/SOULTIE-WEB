@@ -515,6 +515,124 @@ def ensure_indexes(db) -> list[str]:
     )
 
     # =====================================================
+    # PHASE 2J: TRANSACTIONAL BOOKING NOTIFICATION OUTBOX
+    # =====================================================
+
+    # Exactly one durable outbox record per reservation event.
+    # This index must exist before booking event producers are
+    # enabled in a live environment.
+    created.append(
+        db.cafe_booking_outbox.create_index(
+            [("event_key", ASCENDING)],
+            unique=True,
+            name="cafe_booking_outbox_event_key_unique",
+        )
+    )
+
+    # Supports pending deliveries and retry scheduling.
+    # Worker claim/lease logic must be separately implemented.
+    created.append(
+        db.cafe_booking_outbox.create_index(
+            [
+                ("delivery_state", ASCENDING),
+                ("next_attempt_at", ASCENDING),
+                ("locked_until", ASCENDING),
+            ],
+            name="cafe_booking_outbox_delivery_queue",
+        )
+    )
+
+    # =====================================================
+    # PHASE 2J: CAFE ACCOUNT AND VENUE INDEXES
+    # =====================================================
+
+    created.append(
+        db.cafe_partner_accounts.create_index(
+            [("email", ASCENDING)],
+            unique=True,
+            name="cafe_partner_email_unique",
+        )
+    )
+
+    created.append(
+        db.cafe_partner_accounts.create_index(
+            [
+                ("status", ASCENDING),
+                ("created_at", DESCENDING),
+            ],
+            name="cafe_partner_moderation_queue",
+        )
+    )
+
+    created.append(
+        db.cafe_partner_accounts.create_index(
+            [("venue_id", ASCENDING)],
+            unique=True,
+            partialFilterExpression={
+                "venue_id": {"$type": "objectId"}
+            },
+            name="cafe_partner_linked_venue_unique",
+        )
+    )
+
+    created.append(
+        db.venues.create_index(
+            [
+                ("status", ASCENDING),
+                ("city", ASCENDING),
+                ("owner_id", ASCENDING),
+            ],
+            name="cafe_venue_status_city_owner",
+        )
+    )
+
+    created.append(
+        db.venues.create_index(
+            [
+                ("owner_id", ASCENDING),
+                ("created_at", DESCENDING),
+            ],
+            name="cafe_venue_owner_created",
+        )
+    )
+
+
+    # =====================================================
+    # PHASE 2J: CAFE PARTNER SESSION INDEXES
+    # =====================================================
+
+    # Every cafe bearer token has a unique digest.
+    # Plaintext bearer tokens are never stored.
+    created.append(
+        db.cafe_partner_sessions.create_index(
+            [("token_hash", ASCENDING)],
+            unique=True,
+            name="cafe_partner_session_token_unique",
+        )
+    )
+
+    # Expired sessions are removed automatically by MongoDB.
+    # Authentication separately checks expiry immediately.
+    created.append(
+        db.cafe_partner_sessions.create_index(
+            [("expires_at", ASCENDING)],
+            expireAfterSeconds=0,
+            name="cafe_partner_session_expiry_ttl",
+        )
+    )
+
+    # Supports a future revoke-all-sessions action for a cafe.
+    created.append(
+        db.cafe_partner_sessions.create_index(
+            [
+                ("partner_id", ASCENDING),
+                ("revoked_at", ASCENDING),
+            ],
+            name="cafe_partner_session_owner_revoke",
+        )
+    )
+
+    # =====================================================
     # CULTURE
     # =====================================================
 

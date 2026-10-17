@@ -1,4 +1,11 @@
+from app.api.v1.cafe_email_verification_routes import cafe_email_verification_bp
 from flask import Blueprint
+from app.api.v1.cafe_registration_routes import cafe_registration_bp
+from app.api.v1.cafe_admin_routes import cafe_admin_bp
+from app.api.v1.cafe_auth_routes import cafe_auth_bp
+from app.api.v1.cafe_venue_routes import cafe_venue_bp
+from app.api.v1.cafe_venue_operations_routes import cafe_venue_operations_bp
+from app.api.v1.cafe_booking_configuration_routes import cafe_booking_configuration_bp
 
 from app.api.v1.auth.routes import (
     auth_bp,
@@ -88,6 +95,25 @@ api_v1_bp.register_blueprint(
 
 api_v1_bp.register_blueprint(
     push_devices_bp
+)
+
+api_v1_bp.register_blueprint(
+    cafe_admin_bp
+)
+
+api_v1_bp.register_blueprint(
+    cafe_registration_bp
+)
+
+api_v1_bp.register_blueprint(
+    cafe_auth_bp
+)
+api_v1_bp.register_blueprint(cafe_venue_bp)
+api_v1_bp.register_blueprint(cafe_venue_operations_bp)
+api_v1_bp.register_blueprint(cafe_booking_configuration_bp)
+
+api_v1_bp.register_blueprint(
+    cafe_email_verification_bp
 )
 
 __all__ = [
