@@ -108,3 +108,22 @@ def process_one_cafe_booking_outbox_event_with_provider(*, provider):
     return process_one_cafe_booking_outbox_event(
         deliver_recipient=adapter,
     )
+
+def process_one_cafe_booking_outbox_event_if_enabled(
+    *, provider, enabled=False
+):
+    """Fail closed unless an authorized caller explicitly enables work.
+
+    This processes at most one event. It does not configure or launch
+    a scheduler and does not establish provider-side idempotency.
+    The caller is responsible for authorization and deployment policy.
+    """
+    if enabled is not True:
+        return {
+            "outcome": "disabled",
+            "all_delivered": False,
+        }
+
+    return process_one_cafe_booking_outbox_event_with_provider(
+        provider=provider,
+    )

@@ -9,6 +9,10 @@ A database lease alone cannot ensure exactly-once external delivery.
 """
 
 from collections.abc import Callable
+from app.services.cafe_booking_recipient_dispatch_coordinator import (
+    _verify_parent_claim,
+    CafeRecipientDispatchError,
+)
 
 from app.repositories.cafe_booking_recipient_claim_repository import (
     _delivery_identity,
@@ -45,6 +49,12 @@ def make_cafe_booking_idempotent_adapter(provider):
                 "A trusted parent claim is required."
             )
 
+        try:
+            _verify_parent_claim(parent_claim)
+        except CafeRecipientDispatchError as exc:
+            raise CafeProviderIdempotencyError(
+                "Invalid trusted parent booking claim."
+            ) from exc
         if not isinstance(recipient_claim, dict):
             raise CafeProviderIdempotencyError(
                 "A trusted recipient claim is required."
