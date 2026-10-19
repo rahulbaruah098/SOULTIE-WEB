@@ -5,6 +5,14 @@ context. This module never enqueues Celery or starts a worker.
 """
 
 from datetime import datetime, timedelta, timezone
+import os
+from hashlib import sha256
+
+from app.schemas.notification import NOTIFICATION_COPY
+from app.services.firebase_push_service import (
+    FirebasePushError,
+    FirebasePushService,
+)
 
 from flask import current_app
 
@@ -152,13 +160,187 @@ def execute_next_notification_delivery(*, now=None):
         return {"status": "suppressed" if status == "updated" else "stale"}
 
     if claim["channel"] == "push":
-        # Never claim provider delivery when no provider exists.
-        status = _retry_or_fail(
-            claim,
-            code="PUSH_PROVIDER_UNAVAILABLE",
-            now=timestamp,
+        if os.getenv("XUORONI_FCM_PUSH_DELIVERY_ENABLED") != "true":
+            return {
+                "status": _retry_or_fail(
+                    claim,
+                    code="PUSH_PROVIDER_UNAVAILABLE",
+                    now=timestamp,
+                )
+            }
+
+        kind = notification.get("type")
+        if kind not in NOTIFICATION_COPY:
+            status = _transition(
+                claim,
+                mark_notification_delivery_suppressed,
+                error_code="PUSH_POLICY_INVALID",
+                now=timestamp,
+            )
+            return {
+                "status": (
+                    "suppressed" if status == "updated" else "stale"
+                )
+            }
+
+        if datetime.now(timezone.utc) >= claim["lease_expires_at"]:
+            return {"status": "lease_expired"}
+
+        devices = list(
+            mongo.db.user_devices.find(
+                {
+                    "user_id": claim["user_id"],
+                    "push_provider": "fcm",
+                    "push_enabled": True,
+                    "revoked_at": None,
+                    "push_token": {"$type": "string"},
+                },
+                {"push_token": 1, "device_id": 1},
+            ).limit(21)
         )
-        return {"status": status}
+
+        if not devices:
+            status = _transition(
+                claim,
+                mark_notification_delivery_suppressed,
+                error_code="NO_ACTIVE_PUSH_DEVICE",
+                now=timestamp,
+            )
+            return {
+                "status": (
+                    "suppressed" if status == "updated" else "stale"
+                )
+            }
+
+        # Bounded sending. A larger fanout needs a durable
+        # per-device delivery model before activation.
+        if len(devices) > 20:
+            return {
+                "status": _retry_or_fail(
+                    claim,
+                    code="PUSH_DEVICE_LIMIT_EXCEEDED",
+                    now=timestamp,
+                )
+            }
+
+        try:
+            provider = FirebasePushService()
+            title, body = NOTIFICATION_COPY[kind]
+
+            # Durable per-token checkpoints prevent resending to
+            # already-recorded devices after partial fanout failure.
+            # They cannot eliminate an FCM-accepted-before-DB-write
+            # crash window: FCM itself is not exactly-once.
+            accepted = set(claim.get("push_accepted_devices") or [])
+
+            for device in sorted(
+                devices, key=lambda item: item["device_id"]
+            ):
+                current_time = datetime.now(timezone.utc)
+                if current_time >= claim["lease_expires_at"]:
+                    return {"status": "lease_expired"}
+
+                fingerprint = sha256(
+                    device["push_token"].encode("utf-8")
+                ).hexdigest()
+
+                if fingerprint in accepted:
+                    continue
+
+                # Confirm that this worker still holds its claim
+                # before making the external provider request.
+                active = mongo.db.notification_deliveries.find_one(
+                    {
+                        "_id": claim["_id"],
+                        "status": "processing",
+                        "attempt_count": claim["attempt_count"],
+                        "lease_expires_at": {"$gt": current_time},
+                    },
+                    {"_id": 1},
+                )
+                if active is None:
+                    return {"status": "stale"}
+
+                provider.send(
+                    token=device["push_token"],
+                    title=title,
+                    body=body,
+                    data={
+                        "notification_id": str(notification["_id"]),
+                        "type": kind,
+                    },
+                    enabled=True,
+                )
+
+                # Record each accepted token before sending to
+                # another device. Preserve checkpoints on retries.
+                checkpoint_time = datetime.now(timezone.utc)
+
+                receipt = mongo.db.notification_deliveries.update_one(
+                    {
+                        "_id": claim["_id"],
+                        "status": "processing",
+                        "attempt_count": claim["attempt_count"],
+                        "lease_expires_at": {"$gt": checkpoint_time},
+                    },
+                    {
+                        "$addToSet": {
+                            "push_accepted_devices": fingerprint,
+                        },
+                        "$set": {
+                            "updated_at": checkpoint_time,
+                        },
+                    },
+                )
+
+                if receipt.matched_count != 1:
+                    return {"status": "stale"}
+
+                accepted.add(fingerprint)
+
+        except FirebasePushError as exc:
+            if exc.code == "FCM_DEVICE_UNREGISTERED":
+                # Only revoke the exact token that FCM rejected.
+                # A token rotated concurrently must remain active.
+                mongo.db.user_devices.update_one(
+                    {
+                        "user_id": claim["user_id"],
+                        "device_id": device["device_id"],
+                        "push_provider": "fcm",
+                        "push_token": device["push_token"],
+                        "push_enabled": True,
+                        "revoked_at": None,
+                    },
+                    {
+                        "$set": {
+                            "push_enabled": False,
+                            "revoked_at": datetime.now(timezone.utc),
+                            "updated_at": datetime.now(timezone.utc),
+                        },
+                        "$unset": {
+                            "push_token": "",
+                            "push_token_hash": "",
+                        },
+                    },
+                )
+            return {
+                "status": _retry_or_fail(
+                    claim,
+                    code=exc.code,
+                    now=timestamp,
+                )
+            }
+
+        status = _transition(
+            claim,
+            mark_notification_delivery_delivered,
+            now=datetime.now(timezone.utc),
+        )
+        return {
+            "status": (
+                "delivered" if status == "updated" else "stale"
+            )
+        }
 
     try:
         prepared = prepare_notification_email(notification)

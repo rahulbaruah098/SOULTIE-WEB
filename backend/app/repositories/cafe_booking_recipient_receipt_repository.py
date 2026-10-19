@@ -16,6 +16,13 @@ delivery integrations must deduplicate by delivery_key.
 from datetime import datetime, timedelta, timezone
 import re
 
+from app.services.cafe_booking_recipient_retry_policy_service import (
+    calculate_cafe_recipient_retry,
+    MAX_ATTEMPTS as MAX_RECIPIENT_ATTEMPTS,
+    BASE_DELAY_SECONDS as RETRY_BASE_SECONDS,
+    MAX_DELAY_SECONDS as RETRY_MAX_SECONDS,
+)
+
 from app.extensions import mongo
 from app.repositories.cafe_booking_recipient_claim_repository import (
     _delivery_identity,
@@ -23,9 +30,6 @@ from app.repositories.cafe_booking_recipient_claim_repository import (
 )
 
 
-MAX_RECIPIENT_ATTEMPTS = 8
-RETRY_BASE_SECONDS = 30
-RETRY_MAX_SECONDS = 3600
 
 
 class CafeRecipientReceiptError(ValueError):
@@ -162,7 +166,11 @@ def record_cafe_booking_recipient_failure(
             "Invalid recipient delivery failure category."
         )
 
-    dead_letter = attempt_count >= MAX_RECIPIENT_ATTEMPTS
+    decision = calculate_cafe_recipient_retry(
+        attempt_count=attempt_count,
+        now=timestamp,
+    )
+    dead_letter = decision['action'] == 'dead_letter'
 
     fields = {
         "delivery_state": (
@@ -178,13 +186,7 @@ def record_cafe_booking_recipient_failure(
         fields["dead_lettered_at"] = timestamp
         fields["next_attempt_at"] = None
     else:
-        seconds = min(
-            RETRY_BASE_SECONDS * (2 ** (attempt_count - 1)),
-            RETRY_MAX_SECONDS,
-        )
-        fields["next_attempt_at"] = (
-            timestamp + timedelta(seconds=seconds)
-        )
+        fields["next_attempt_at"] = decision['retry_after']
 
     update = {
         "$set": fields,

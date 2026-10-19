@@ -1,3 +1,5 @@
+from app.api.v1.cafe_booking_action_routes import cafe_booking_action_bp
+from app.api.v1.cafe_booking_list_routes import cafe_booking_list_bp
 from app.api.v1.cafe_email_verification_routes import cafe_email_verification_bp
 from flask import Blueprint
 from app.api.v1.cafe_registration_routes import cafe_registration_bp
@@ -111,6 +113,8 @@ api_v1_bp.register_blueprint(
 api_v1_bp.register_blueprint(cafe_venue_bp)
 api_v1_bp.register_blueprint(cafe_venue_operations_bp)
 api_v1_bp.register_blueprint(cafe_booking_configuration_bp)
+api_v1_bp.register_blueprint(cafe_booking_action_bp)
+api_v1_bp.register_blueprint(cafe_booking_list_bp)
 
 api_v1_bp.register_blueprint(
     cafe_email_verification_bp

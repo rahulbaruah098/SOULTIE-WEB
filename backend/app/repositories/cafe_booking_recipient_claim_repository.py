@@ -20,6 +20,8 @@ import secrets
 from bson import ObjectId
 from pymongo import ReturnDocument
 
+from app.services.cafe_booking_recipient_retry_policy_service import MAX_ATTEMPTS as MAX_RECIPIENT_ATTEMPTS
+
 from app.extensions import mongo
 
 
@@ -122,6 +124,7 @@ def claim_cafe_booking_recipient_delivery(
         "event_type": identity["event_type"],
         "recipient_type": identity["recipient_type"],
         "recipient_id": identity["recipient_id"],
+        "attempt_count": {"$lt": MAX_RECIPIENT_ATTEMPTS},
         "$or": [
             {
                 "delivery_state": "pending",
