@@ -32,13 +32,16 @@ def _object_id(value):
 
 
 def _utc_time(value, *, label):
-    if (
-        not isinstance(value, datetime)
-        or value.tzinfo is None
-        or value.utcoffset() is None
-    ):
+    if not isinstance(value, datetime):
         raise ReservationRepositoryError(
-            f"{label} must be timezone-aware."
+            f"{label} must be a datetime."
+        )
+    # PyMongo returns BSON UTC dates as naive UTC by default.
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    if value.utcoffset() is None:
+        raise ReservationRepositoryError(
+            f"{label} must have a valid timezone."
         )
     return value.astimezone(timezone.utc)
 
@@ -413,4 +416,8 @@ def find_reservation_by_idempotency_key(
             "Invalid existing reservation occupancy."
         )
 
-    return record
+    # Use verified UTC values for exact replay comparisons.
+    normalized = dict(record)
+    normalized["start_at"] = start
+    normalized["end_at"] = end
+    return normalized

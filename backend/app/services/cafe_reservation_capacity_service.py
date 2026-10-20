@@ -32,6 +32,10 @@ def _positive_integer(value, label, minimum=1, maximum=10000):
 
 
 def _utc(value, label):
+    # BSON UTC capacity normalization: PyMongo naive timestamps.
+    if isinstance(value, datetime) and value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+
     if (
         not isinstance(value, datetime)
         or value.tzinfo is None
