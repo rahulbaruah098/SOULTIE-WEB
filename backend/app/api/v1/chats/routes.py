@@ -387,3 +387,111 @@ def mark_chat_messages_read(
 __all__ = [
     "chats_bp",
 ]
+
+
+
+@chats_bp.post("/<conversation_id>/cafe-suggestions")
+@auth_required
+def suggest_chat_cafes(conversation_id):
+    """Read-only cafe suggestions for authorized chat participants."""
+    from datetime import date
+    from bson import ObjectId
+    from pymongo.errors import PyMongoError
+    from app.services.cafe_chat_authorized_recommendation_service import (
+        get_authorized_chat_cafe_suggestions,
+    )
+    from app.services.cafe_chat_booking_action_service import (
+        CafeChatAvailabilityUnavailable,
+    )
+    from app.services.cafe_chat_venue_recommendation_service import (
+        CafeChatRecommendationUnavailable,
+    )
+
+    def error(code, message, status):
+        response = jsonify({
+            "error": {"code": code, "message": message}
+        })
+        response.status_code = status
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    principal = getattr(g, "current_user", None)
+    uid = principal.get("_id") if isinstance(principal, dict) else None
+    if not isinstance(uid, ObjectId):
+        return error("AUTH_REQUIRED", "Authentication required.", 401)
+
+    if not ObjectId.is_valid(conversation_id):
+        return error("CHAT_VALIDATION_ERROR", "Invalid conversation.", 400)
+
+    if request.content_length is not None and request.content_length > 4096:
+        return error("REQUEST_TOO_LARGE", "Request too large.", 413)
+
+    if not request.is_json:
+        return error("JSON_REQUIRED", "JSON request required.", 415)
+
+    if len(request.get_data(cache=True)) > 4096:
+        return error("REQUEST_TOO_LARGE", "Request too large.", 413)
+
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return error("CHAT_VALIDATION_ERROR", "Invalid JSON object.", 400)
+
+    if set(body) - {"message", "booking_date", "party_size", "limit"}:
+        return error("CHAT_VALIDATION_ERROR", "Unexpected fields.", 400)
+
+    message = body.get("message")
+    limit = body.get("limit", 5)
+    if not isinstance(message, str) or not 1 <= len(message) <= 1500:
+        return error("CHAT_VALIDATION_ERROR", "Invalid message.", 400)
+    if type(limit) is not int or not 1 <= limit <= 5:
+        return error("CHAT_VALIDATION_ERROR", "Invalid limit.", 400)
+
+    raw_date = body.get("booking_date")
+    party_size = body.get("party_size")
+    if (raw_date is None) != (party_size is None):
+        return error("CHAT_VALIDATION_ERROR", "Date and party size required together.", 400)
+
+    parsed_date = None
+    if raw_date is not None:
+        if not isinstance(raw_date, str) or len(raw_date) != 10:
+            return error("CHAT_VALIDATION_ERROR", "Invalid date.", 400)
+        try:
+            parsed_date = date.fromisoformat(raw_date)
+            if parsed_date.isoformat() != raw_date:
+                raise ValueError("Noncanonical date")
+        except ValueError:
+            return error("CHAT_VALIDATION_ERROR", "Invalid date.", 400)
+        if type(party_size) is not int or not 1 <= party_size <= 100:
+            return error("CHAT_VALIDATION_ERROR", "Invalid party size.", 400)
+
+    try:
+        result = get_authorized_chat_cafe_suggestions(
+            user_id=uid,
+            conversation_id=conversation_id,
+            message=message,
+            booking_date=parsed_date,
+            party_size=party_size,
+            limit=limit,
+        )
+    except ChatServiceError as exc:
+        response, status = _service_error(exc)
+        response.headers["Cache-Control"] = "no-store"
+        return response, status
+    except ValueError:
+        return error("CHAT_VALIDATION_ERROR", "Invalid request.", 400)
+    except (
+        CafeChatAvailabilityUnavailable,
+        CafeChatRecommendationUnavailable,
+        PyMongoError,
+    ):
+        return error(
+            "CAFE_SUGGESTIONS_UNAVAILABLE",
+            "Suggestions temporarily unavailable.",
+            503,
+        )
+
+    response = jsonify(result)
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
