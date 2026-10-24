@@ -71,6 +71,14 @@ def create_app(config_override=None) -> Flask:
         },
     )
 
+    # PHASE_2N_OUTBOX_STARTUP_INDEXES
+    with app.app_context():
+        from app.extensions import mongo as _sm_outbox_mongo
+        from app.repositories.safe_meet_notification_outbox_indexes import (
+            ensure_safe_meet_outbox_indexes as _sm_ensure_outbox_indexes,
+        )
+        _sm_ensure_outbox_indexes(_sm_outbox_mongo.db)
+
     return app
 
 

@@ -84,6 +84,23 @@ def create_safe_meet_record(plan, event, *, db=None):
                     event_doc,
                     session=session,
                 )
+                # PHASE_2N_TRANSACTIONAL_OUTBOX
+                from app.repositories.safe_meet_notification_outbox_repository import (
+                    enqueue_safe_meet_notification_intents as _sm_enqueue_notification,
+                )
+                _sm_audit_for_outbox = event_doc
+                _sm_plan_for_outbox = database.safe_meet_plans.find_one(
+                    {"_id": _sm_audit_for_outbox["safe_meet_id"]},
+                    session=session,
+                )
+                if _sm_plan_for_outbox is None:
+                    raise RuntimeError("Safe Meet missing during notification enqueue.")
+                _sm_enqueue_notification(
+                    _sm_plan_for_outbox,
+                    _sm_audit_for_outbox,
+                    database=database,
+                    session=session,
+                )
     except DuplicateKeyError as exc:
         raise SafeMeetConflictError(
             "Safe Meet proposal already exists."
@@ -220,6 +237,23 @@ def transition_safe_meet_record(
                 event_doc,
                 session=session,
             )
+            # PHASE_2N_TRANSACTIONAL_OUTBOX
+            from app.repositories.safe_meet_notification_outbox_repository import (
+                enqueue_safe_meet_notification_intents as _sm_enqueue_notification,
+            )
+            _sm_audit_for_outbox = event_doc
+            _sm_plan_for_outbox = database.safe_meet_plans.find_one(
+                {"_id": _sm_audit_for_outbox["safe_meet_id"]},
+                session=session,
+            )
+            if _sm_plan_for_outbox is None:
+                raise RuntimeError("Safe Meet missing during notification enqueue.")
+            _sm_enqueue_notification(
+                _sm_plan_for_outbox,
+                _sm_audit_for_outbox,
+                database=database,
+                session=session,
+            )
 
     return updated, event_doc
 
