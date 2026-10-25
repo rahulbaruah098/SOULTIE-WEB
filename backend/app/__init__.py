@@ -79,6 +79,28 @@ def create_app(config_override=None) -> Flask:
         )
         _sm_ensure_outbox_indexes(_sm_outbox_mongo.db)
 
+    # SAFE_MEET_REMINDER_INDEX_STARTUP_R5
+    with app.app_context():
+        from app.extensions import mongo as _reminder_mongo
+        from app.repositories.safe_meet_reminder_indexes import ensure_safe_meet_reminder_indexes
+        ensure_safe_meet_reminder_indexes(_reminder_mongo.db)
+
+    # SAFE_MEET_CHECKIN_INDEX_STARTUP_CP14B
+    with app.app_context():
+        from app.extensions import mongo as _checkin_mongo
+        from app.services.safe_meet_checkin_service import (
+            ensure_safe_meet_checkin_indexes,
+        )
+        ensure_safe_meet_checkin_indexes(_checkin_mongo.db)
+
+    # SAFE_MEET_SOS_INDEX_STARTUP_CP16B
+    with app.app_context():
+        from app.extensions import mongo
+        from app.services.safe_meet_sos_service import ensure_safe_meet_sos_indexes
+        ensure_safe_meet_sos_indexes(mongo.db)
+    # SAFE_MEET_PRODUCTION_SECURITY_CP18G
+    from app.services.safe_meet_production_security import apply_production_security
+    apply_production_security(app)
     return app
 
 

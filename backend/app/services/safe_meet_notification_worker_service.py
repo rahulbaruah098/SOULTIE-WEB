@@ -84,6 +84,42 @@ def run_one_safe_meet_notification(
                 "Provider did not accept the notification."
             )
     except Exception as exc:
+        from app.services.safe_meet_reminder_presend_service import (
+            StaleSafeMeetReminder,
+        )
+        if isinstance(exc, StaleSafeMeetReminder):
+            from app.services.safe_meet_notification_delivery_service import (
+                SafeMeetDeliveryError,
+            )
+            moment_utc = moment.astimezone(timezone.utc)
+            collection = database.safe_meet_notification_outbox
+            changed = collection.update_one(
+                {
+                    "_id": item["_id"],
+                    "delivery_status": "processing",
+                    "lease_token": item["lease_token"],
+                    "lease_until": {"$gt": moment_utc},
+                },
+                {
+                    "$set": {
+                        "delivery_status": "suppressed",
+                        "last_error": "STALE_SAFE_MEET_REMINDER",
+                        "updated_at": moment_utc,
+                    },
+                    "$unset": {
+                        "worker_id": "",
+                        "lease_token": "",
+                        "lease_until": "",
+                    },
+                },
+            )
+            return {
+                "outcome": (
+                    "suppressed" if changed.modified_count == 1
+                    else "lease_lost"
+                ),
+                "outbox_id": str(item["_id"]),
+            }
         error_code = (
             "INVALID_OUTBOX_RECORD"
             if isinstance(exc, SafeMeetNotificationWorkerError)

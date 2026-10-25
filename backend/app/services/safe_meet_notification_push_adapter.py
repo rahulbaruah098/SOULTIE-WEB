@@ -23,6 +23,9 @@ TITLES = {
     "safe_meet_completion_updated": "Meetup status updated",
 }
 
+# SAFE_MEET_REMINDER_EVENT_REGISTRATION
+TITLES["safe_meet_reminder"] = "Safe Meet reminder"
+
 
 def deliver_safe_meet_push(item, *, transport, device_loader=None):
     """Return True only when every eligible device is accepted.

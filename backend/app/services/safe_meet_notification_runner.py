@@ -40,6 +40,19 @@ def run_safe_meet_notification_batch(
     outcomes = []
     for _ in range(max_jobs):
         def sender(item):
+            if item.get("event_type") == "safe_meet_reminder":
+                from app.services.safe_meet_reminder_presend_service import (
+                    reminder_can_send,
+                )
+                if not reminder_can_send(
+                    database=database, outbox_item=item
+                ):
+                    from app.services.safe_meet_reminder_presend_service import (
+                        StaleSafeMeetReminder,
+                    )
+                    raise StaleSafeMeetReminder(
+                        "Safe Meet reminder is no longer eligible."
+                    )
             return deliver_safe_meet_push(
                 item,
                 transport=transport,
@@ -62,4 +75,5 @@ def run_safe_meet_notification_batch(
         "retry_pending": outcomes.count("pending"),
         "failed": outcomes.count("failed"),
         "lease_lost": outcomes.count("lease_lost"),
+        "suppressed": outcomes.count("suppressed"),
     }
