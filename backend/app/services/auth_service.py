@@ -64,11 +64,25 @@ def utc_now() -> datetime:
 
 
 def _refresh_expiry() -> datetime:
-    return utc_now() + timedelta(
-        days=current_app.config[
-            "JWT_REFRESH_TOKEN_DAYS"
-        ]
+    """Long-lived rolling mobile session.
+
+    Ordinary access-token expiry does not end the login.
+    Refresh rotation extends the session lifetime.
+    Logout, revocation and replay protections remain enforced.
+    """
+    days = current_app.config.get(
+        "PERSISTENT_LOGIN_REFRESH_DAYS", 3650
     )
+    if (
+        isinstance(days, bool)
+        or not isinstance(days, int)
+        or not 1 <= days <= 3650
+    ):
+        raise ValueError(
+            "PERSISTENT_LOGIN_REFRESH_DAYS must be 1..3650."
+        )
+    return utc_now() + timedelta(days=days)
+
 
 
 def _build_token_response(
