@@ -431,9 +431,17 @@ def build_match_created_payload(
         "event": (
             MATCH_CREATED_EVENT
         ),
-        "match": dict(
-            match
-        ),
+        "match": {
+            key: match[key]
+            for key in (
+                "id",
+                "other_user_id",
+                "status",
+                "matched_at",
+                "updated_at",
+            )
+            if key in match
+        },
         "experience_available": True,
     }
 
