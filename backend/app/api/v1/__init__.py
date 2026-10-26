@@ -8,6 +8,7 @@ from app.api.v1.cafe_email_verification_routes import cafe_email_verification_bp
 
 
 from flask import Blueprint
+from app.api.v1.reports.routes import reports_bp
 
 
 from app.api.v1.cafe_registration_routes import cafe_registration_bp
@@ -407,6 +408,23 @@ api_v1_bp.register_blueprint(cafe_venue_opening_hours_bp)
 
 
 
+
+api_v1_bp.register_blueprint(reports_bp)
+
+from app.api.v1.report_moderation_routes import report_moderation_bp
+api_v1_bp.register_blueprint(report_moderation_bp)
+
+
+from app.api.v1.report_appeal_routes import report_appeal_bp
+api_v1_bp.register_blueprint(report_appeal_bp)
+
+
+from app.api.v1.user_block_routes import user_blocks_bp
+api_v1_bp.register_blueprint(user_blocks_bp)
+
+
+from app.api.v1.account_moderation_routes import account_moderation_bp
+api_v1_bp.register_blueprint(account_moderation_bp)
 
 __all__ = [
 

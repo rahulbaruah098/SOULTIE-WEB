@@ -36,9 +36,6 @@ def _utc_time(value, *, label):
         raise ReservationRepositoryError(
             f"{label} must be a datetime."
         )
-    # PyMongo returns BSON UTC dates as naive UTC by default.
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
     if value.utcoffset() is None:
         raise ReservationRepositoryError(
             f"{label} must have a valid timezone."

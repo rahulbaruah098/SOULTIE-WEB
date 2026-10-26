@@ -53,6 +53,22 @@ def _check_plan_access(plan, actor):
         conversation_id=plan["conversation_id"],
     )
 
+    # Explicit block enforcement, independent of chat authorization.
+    from bson.errors import InvalidId
+    from app.repositories.safety_repository import pair_is_blocked
+
+    try:
+        first, second = (ObjectId(member) for member in members)
+    except (InvalidId, ValueError, TypeError):
+        raise SafeMeetAuthorizationError(
+            "Safe Meet is unavailable."
+        ) from None
+
+    if pair_is_blocked(first, second):
+        raise SafeMeetAuthorizationError(
+            "Safe Meet is unavailable."
+        )
+
     return plan
 
 

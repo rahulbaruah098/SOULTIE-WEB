@@ -422,6 +422,24 @@ def ensure_indexes(db) -> list[str]:
 
     created.append(
         db.reports.create_index(
+            [("reporter_id", ASCENDING),
+             ("idempotency_key", ASCENDING)],
+            unique=True,
+            partialFilterExpression={
+                "idempotency_key": {"$type": "string"}
+            },
+        )
+    )
+
+    created.append(
+        db.reports.create_index(
+            [("reporter_id", ASCENDING),
+             ("created_at", DESCENDING)],
+        )
+    )
+
+    created.append(
+        db.reports.create_index(
             [
                 ("status", ASCENDING),
                 ("severity", DESCENDING),
@@ -794,6 +812,21 @@ def ensure_indexes(db) -> list[str]:
                 ("resource_id", ASCENDING),
                 ("created_at", DESCENDING),
             ]
+        )
+    )
+
+    # Phase 2O appeal uniqueness and review indexes.
+    created.append(
+        db.report_appeals.create_index(
+            [("report_id", ASCENDING), ("appellant_id", ASCENDING)],
+            unique=True,
+            name="report_appeal_unique_appellant",
+        )
+    )
+    created.append(
+        db.report_appeals.create_index(
+            [("status", ASCENDING), ("created_at", DESCENDING)],
+            name="report_appeal_review_queue",
         )
     )
 
