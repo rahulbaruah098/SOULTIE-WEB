@@ -1,4 +1,4 @@
-"""Durable supplementary delivery state for Xuoroni Notifications."""
+"""Durable supplementary delivery state for Soultie Notifications."""
 
 from datetime import (
     datetime,

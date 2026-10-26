@@ -1,4 +1,4 @@
-"""Tests for Xuoroni discovery request validation."""
+"""Tests for Soultie discovery request validation."""
 
 from datetime import (
     datetime,

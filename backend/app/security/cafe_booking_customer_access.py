@@ -3,7 +3,7 @@
 This checks an existing authenticated dating user's CURRENT database
 status. It does not authenticate an HTTP token or session.
 
-The API layer must obtain customer_id exclusively from Xuoroni's
+The API layer must obtain customer_id exclusively from Soultie's
 verified dating-user authentication context, never from a client
 supplied JSON field.
 
@@ -28,7 +28,7 @@ def authorize_cafe_booking_customer(
     venue_id,
     session,
 ):
-    """Return True only for an active Xuoroni dating-user record.
+    """Return True only for an active Soultie dating-user record.
 
     Return False for missing or non-active users. Raise on malformed
     identities, absent transactions or inconsistent database data.

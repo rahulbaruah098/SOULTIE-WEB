@@ -1,4 +1,4 @@
-﻿"""HTTP API tests for Xuoroni public culture knowledge."""
+﻿"""HTTP API tests for Soultie public culture knowledge."""
 
 import pytest
 from bson import ObjectId

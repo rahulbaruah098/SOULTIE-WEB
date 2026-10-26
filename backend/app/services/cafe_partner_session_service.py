@@ -1,4 +1,4 @@
-"""Isolated opaque sessions for Xuoroni cafe partners.
+"""Isolated opaque sessions for Soultie cafe partners.
 
 These credentials must never authenticate dating-user or admin routes.
 Only session token digests are persisted.

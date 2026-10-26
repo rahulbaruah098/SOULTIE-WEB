@@ -1,4 +1,4 @@
-"""Schemas and document builders for Xuoroni matching."""
+"""Schemas and document builders for Soultie matching."""
 
 from datetime import (
     date,

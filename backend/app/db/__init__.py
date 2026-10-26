@@ -6,7 +6,7 @@ from app.extensions import mongo
 
 def initialize_database(app: Flask) -> None:
     """
-    Initialize Xuoroni MongoDB infrastructure.
+    Initialize Soultie MongoDB infrastructure.
 
     Index creation is idempotent and can safely run again
     when the configured definitions have not changed.

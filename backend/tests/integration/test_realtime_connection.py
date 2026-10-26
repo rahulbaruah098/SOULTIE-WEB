@@ -1,4 +1,4 @@
-"""Socket.IO connection integration tests for Xuoroni realtime."""
+"""Socket.IO connection integration tests for Soultie realtime."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-﻿"""Authenticated HTTP tests for Xuoroni discovery."""
+﻿"""Authenticated HTTP tests for Soultie discovery."""
 
 from datetime import (
     datetime,

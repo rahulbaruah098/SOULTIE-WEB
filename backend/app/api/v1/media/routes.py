@@ -1,4 +1,4 @@
-"""Authenticated Xuoroni profile media API."""
+"""Authenticated Soultie profile media API."""
 
 from flask import (
     Blueprint,

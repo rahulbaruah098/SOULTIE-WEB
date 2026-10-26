@@ -1,4 +1,4 @@
-"""Owner-scoped persistence for Xuoroni cafe operational settings.
+"""Owner-scoped persistence for Soultie cafe operational settings.
 
 This repository does not authenticate sessions, authorize actors,
 make booking promises, or change cafe moderation decisions.

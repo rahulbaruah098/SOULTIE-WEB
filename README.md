@@ -1,10 +1,10 @@
-# Xuoroni — Northeast India, closer
+# Soultie — Northeast India, closer
 
-A launch website and first-tester registration portal for Xuoroni, a Northeast India dating and community app. Built with React, Flask, and MongoDB.
+A launch website and first-tester registration portal for Soultie, a Northeast India dating and community app. Built with React, Flask, and MongoDB.
 
 ## What's included
 
-- Story-led, responsive launch page inspired by the supplied Rong app wireframes (brand name updated to Xuoroni).
+- Story-led, responsive launch page inspired by the supplied Rong app wireframes (brand name updated to Soultie).
 - Admin-managed launch countdown.
 - First-tester form collecting only name, email, and city.
 - Admin login and tester list with CSV export.
@@ -26,7 +26,7 @@ The public story introduces vibe-first matching, Northeast cultures and language
 Use your local MongoDB service, or Docker:
 
 ```bash
-docker run --name xuoroni-mongo -p 27017:27017 -d mongo:7
+docker run --name soultie-mongo -p 27017:27017 -d mongo:7
 ```
 
 ### 2. Configure and start Flask
@@ -45,7 +45,7 @@ python seed_admin.py
 python run.py
 ```
 
-Edit `backend/.env` before use. The seed command creates a demo admin if no admin exists. Default local credentials are `admin@xuoroni.local` / `ChangeMe123!`. Change these immediately, and set a long random `SECRET_KEY` before deploying. The API runs at `http://localhost:5000`.
+Edit `backend/.env` before use. The seed command creates a demo admin if no admin exists. Default local credentials are `admin@soultie.local` / `ChangeMe123!`. Change these immediately, and set a long random `SECRET_KEY` before deploying. The API runs at `http://localhost:5000`.
 
 ### 3. Start React
 
@@ -77,7 +77,7 @@ Sign in at `/admin` with the configured admin email and password. The dashboard 
 ## Project structure
 
 ```text
-xuoroni/
+soultie/
 ├── README.md
 ├── backend/
 │   ├── app/__init__.py
@@ -93,4 +93,4 @@ xuoroni/
 
 ## Before public deployment
 
-Set unique admin credentials and a strong secret, configure HTTPS and production CORS, use a protected MongoDB deployment with backups, and add rate limiting and monitoring. The first-tester form deliberately stores only the three requested fields. The product positioning and app functions on the launch page describe Xuoroni's intended experience; they do not imply that third-party café booking, location, or emergency integrations are already connected.
+Set unique admin credentials and a strong secret, configure HTTPS and production CORS, use a protected MongoDB deployment with backups, and add rate limiting and monitoring. The first-tester form deliberately stores only the three requested fields. The product positioning and app functions on the launch page describe Soultie's intended experience; they do not imply that third-party café booking, location, or emergency integrations are already connected.

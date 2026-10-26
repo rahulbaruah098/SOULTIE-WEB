@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni realtime Chat typing state."""
+"""Integration tests for Soultie realtime Chat typing state."""
 
 import time
 from datetime import (

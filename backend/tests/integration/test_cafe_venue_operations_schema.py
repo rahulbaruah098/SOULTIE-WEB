@@ -1,4 +1,4 @@
-"""Permanent validation tests for Xuoroni cafe operational data."""
+"""Permanent validation tests for Soultie cafe operational data."""
 
 from copy import deepcopy
 

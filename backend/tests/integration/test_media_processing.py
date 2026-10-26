@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni profile media processing."""
+"""Integration tests for Soultie profile media processing."""
 
 from hashlib import sha256
 from io import BytesIO

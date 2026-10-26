@@ -1,4 +1,4 @@
-"""Authenticated Xuoroni compatibility API."""
+"""Authenticated Soultie compatibility API."""
 
 from flask import (
     Blueprint,

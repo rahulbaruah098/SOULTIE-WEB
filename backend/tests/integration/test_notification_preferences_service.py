@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni Notification Preferences service."""
+"""Integration tests for Soultie Notification Preferences service."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-"""Canonical schemas and serializers for Xuoroni profile media."""
+"""Canonical schemas and serializers for Soultie profile media."""
 
 from datetime import (
     date,

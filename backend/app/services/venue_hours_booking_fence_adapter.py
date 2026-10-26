@@ -1,4 +1,4 @@
-"""Adapter for Xuoroni's existing reservation write fence.
+"""Adapter for Soultie's existing reservation write fence.
 
 Booking creation, reservation lifecycle changes and booking-sensitive
 configuration edits must use the same MongoDB venue document fence.

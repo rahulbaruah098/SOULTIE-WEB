@@ -1,4 +1,4 @@
-"""End-to-end Socket.IO tests for Xuoroni private presence broadcasts."""
+"""End-to-end Socket.IO tests for Soultie private presence broadcasts."""
 
 import time
 from datetime import (

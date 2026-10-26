@@ -157,9 +157,9 @@ export default function CafePortal() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <Link to="/" className="brand" aria-label="Xuoroni home">
+        <Link to="/" className="brand" aria-label="Soultie home">
           <span className="brand-mark"><Coffee size={23}/></span>
-          <span>XUORONI</span>
+          <span>SOULTIE</span>
         </Link>
 
         <Link to="/" className="back-link">
@@ -170,13 +170,13 @@ export default function CafePortal() {
       {!session ? (
         <main className="login-card">
           <div className="section-kicker">
-            XUORONI / CAFÉ PARTNER
+            SOULTIE / CAFÉ PARTNER
           </div>
 
           <div className="login-icon"><Coffee/></div>
 
           <h1>Partner sign in</h1>
-          <p>Manage your approved Xuoroni café account.</p>
+          <p>Manage your approved Soultie café account.</p>
 
           <form onSubmit={login}>
             <label>
@@ -216,7 +216,7 @@ export default function CafePortal() {
           <div className="dash-title">
             <div>
               <div className="section-kicker">
-                XUORONI / CAFÉ PARTNER
+                SOULTIE / CAFÉ PARTNER
               </div>
               <h1>Partner dashboard</h1>
               <p>Your approved café account is connected.</p>

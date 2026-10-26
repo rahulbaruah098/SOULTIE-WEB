@@ -1,4 +1,4 @@
-"""Atomic Superadmin moderation of Xuoroni cafe venues.
+"""Atomic Superadmin moderation of Soultie cafe venues.
 
 Caller must pass an authenticated Superadmin ID, which is verified
 again in this service. This service requires MongoDB transactions.

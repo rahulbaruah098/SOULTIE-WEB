@@ -1,4 +1,4 @@
-"""Validation helpers for Xuoroni discovery requests."""
+"""Validation helpers for Soultie discovery requests."""
 
 import base64
 import binascii

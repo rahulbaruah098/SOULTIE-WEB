@@ -1,4 +1,4 @@
-"""Atomic delivery claims for individual Xuoroni cafe recipients.
+"""Atomic delivery claims for individual Soultie cafe recipients.
 
 Each claim targets one deterministic, already initialized recipient
 delivery record. A successful claim creates a worker-specific lease

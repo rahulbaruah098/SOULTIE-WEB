@@ -1,4 +1,4 @@
-"""Business rules and access control for Xuoroni chat."""
+"""Business rules and access control for Soultie chat."""
 
 import logging
 
@@ -52,7 +52,7 @@ logger = logging.getLogger(
 class ChatServiceError(
     RuntimeError
 ):
-    """Base Xuoroni chat-domain error."""
+    """Base Soultie chat-domain error."""
 
     def __init__(
         self,

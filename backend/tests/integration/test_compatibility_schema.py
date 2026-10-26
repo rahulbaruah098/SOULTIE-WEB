@@ -1,4 +1,4 @@
-"""Tests for Xuoroni compatibility data contracts."""
+"""Tests for Soultie compatibility data contracts."""
 
 import pytest
 

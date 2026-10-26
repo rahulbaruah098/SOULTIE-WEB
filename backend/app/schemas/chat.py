@@ -1,4 +1,4 @@
-"""Schemas and document builders for Xuoroni chat."""
+"""Schemas and document builders for Soultie chat."""
 
 from datetime import (
     date,

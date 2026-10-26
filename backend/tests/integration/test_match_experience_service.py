@@ -1,4 +1,4 @@
-"""Tests for Xuoroni privacy-safe Match Experience service."""
+"""Tests for Soultie privacy-safe Match Experience service."""
 
 import pytest
 

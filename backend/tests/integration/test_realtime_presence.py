@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni realtime presence lifecycle."""
+"""Integration tests for Soultie realtime presence lifecycle."""
 
 import time
 from datetime import (

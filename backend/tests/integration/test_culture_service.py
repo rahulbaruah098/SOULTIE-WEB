@@ -1,4 +1,4 @@
-﻿"""Business-rule tests for Xuoroni culture knowledge."""
+﻿"""Business-rule tests for Soultie culture knowledge."""
 
 from copy import deepcopy
 

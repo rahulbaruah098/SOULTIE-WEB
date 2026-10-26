@@ -1,4 +1,4 @@
-"""Authenticated HTTP tests for Xuoroni compatibility."""
+"""Authenticated HTTP tests for Soultie compatibility."""
 
 from uuid import uuid4
 

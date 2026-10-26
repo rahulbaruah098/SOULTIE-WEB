@@ -1,4 +1,4 @@
-"""Business logic for Xuoroni profile discovery."""
+"""Business logic for Soultie profile discovery."""
 
 from copy import deepcopy
 from datetime import (

@@ -1,4 +1,4 @@
-﻿"""Repository helpers for Xuoroni profile discovery."""
+﻿"""Repository helpers for Soultie profile discovery."""
 
 from datetime import (
     date,

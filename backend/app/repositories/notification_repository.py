@@ -1,4 +1,4 @@
-"""MongoDB persistence for durable Xuoroni notifications."""
+"""MongoDB persistence for durable Soultie notifications."""
 
 from datetime import (
     datetime,

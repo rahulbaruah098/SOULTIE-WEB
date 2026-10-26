@@ -1,4 +1,4 @@
-"""Transaction-required durable outbox for Xuoroni cafe bookings.
+"""Transaction-required durable outbox for Soultie cafe bookings.
 
 Outbox writes MUST use the same MongoDB transaction session as the
 reservation insert or lifecycle status update.

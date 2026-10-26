@@ -1,4 +1,4 @@
-"""Final cross-feature hardening tests for Xuoroni realtime Chat."""
+"""Final cross-feature hardening tests for Soultie realtime Chat."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-"""HTTP integration tests for Xuoroni profile-media lifecycle API."""
+"""HTTP integration tests for Soultie profile-media lifecycle API."""
 
 from io import BytesIO
 import json

@@ -1,4 +1,4 @@
-"""Secure Redis-backed OTP service for Xuoroni email authentication."""
+"""Secure Redis-backed OTP service for Soultie email authentication."""
 
 import hashlib
 import hmac

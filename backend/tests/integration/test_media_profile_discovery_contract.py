@@ -1,4 +1,4 @@
-"""Profile and Discovery integration contracts for Xuoroni media."""
+"""Profile and Discovery integration contracts for Soultie media."""
 
 import pytest
 

@@ -1,4 +1,4 @@
-"""Xuoroni shared Flask backend."""
+"""Soultie shared Flask backend."""
 
 from pathlib import Path
 
@@ -60,7 +60,7 @@ def create_app(config_override=None) -> Flask:
         initialize_database(app)
 
     app.logger.info(
-        "Xuoroni application initialized",
+        "SOULTIE application initialized",
         extra={
             "app_name": app.config.get(
                 "APP_NAME"

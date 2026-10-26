@@ -1,4 +1,4 @@
-"""Flask-aware Celery entry point for Xuoroni Notifications.
+"""Flask-aware Celery entry point for Soultie Notifications.
 
 Importing the application does not start workers or scheduling.
 """

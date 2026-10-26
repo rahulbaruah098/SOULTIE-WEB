@@ -1,4 +1,4 @@
-"""Pure Safe Meet lifecycle rules for Xuoroni Phase 2M.
+"""Pure Safe Meet lifecycle rules for Soultie Phase 2M.
 
 Storage, conversation membership, café eligibility, and reservation
 verification belong to the transaction-backed integration layer.

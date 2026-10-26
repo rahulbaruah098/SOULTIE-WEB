@@ -1,4 +1,4 @@
-"""Authentication helpers for Xuoroni Socket.IO realtime connections."""
+"""Authentication helpers for Soultie Socket.IO realtime connections."""
 
 from datetime import (
     datetime,
@@ -306,7 +306,7 @@ def authenticate_realtime_connection(
     """
     Authenticate a Socket.IO handshake.
 
-    The client must provide the normal Xuoroni access token
+    The client must provide the normal Soultie access token
     through the Socket.IO auth payload. The access token is
     accepted only while its backing auth session remains active.
     """

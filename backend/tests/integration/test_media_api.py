@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni authenticated profile media API."""
+"""Integration tests for Soultie authenticated profile media API."""
 
 from io import BytesIO
 import json

@@ -1,4 +1,4 @@
-"""Authenticated Xuoroni push-device lifecycle endpoints."""
+"""Authenticated Soultie push-device lifecycle endpoints."""
 
 from flask import Blueprint, g, jsonify, request
 

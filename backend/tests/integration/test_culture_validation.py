@@ -1,4 +1,4 @@
-﻿"""Tests for Xuoroni culture validation and normalization."""
+﻿"""Tests for Soultie culture validation and normalization."""
 
 import pytest
 

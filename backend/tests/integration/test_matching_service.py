@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni matching business rules."""
+"""Integration tests for Soultie matching business rules."""
 
 import pytest
 from bson import ObjectId

@@ -1,4 +1,4 @@
-"""MongoDB integration tests for Xuoroni Notification persistence."""
+"""MongoDB integration tests for Soultie Notification persistence."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-"""Xuoroni push-device API integration and ownership tests."""
+"""Soultie push-device API integration and ownership tests."""
 
 import pytest
 from bson import ObjectId

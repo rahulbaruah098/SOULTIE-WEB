@@ -1,4 +1,4 @@
-"""Tests for Xuoroni profile media schemas."""
+"""Tests for Soultie profile media schemas."""
 
 from datetime import (
     datetime,

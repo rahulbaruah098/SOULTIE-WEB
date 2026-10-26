@@ -1,4 +1,4 @@
-"""Authenticated Socket.IO boundary for Xuoroni realtime features."""
+"""Authenticated Socket.IO boundary for Soultie realtime features."""
 
 from flask import (
     current_app,
@@ -202,7 +202,7 @@ def handle_realtime_connect(
     Authenticate a Socket.IO connection.
 
     Authentication is performed only from the supplied
-    Xuoroni access token. Client-supplied user IDs are
+    Soultie access token. Client-supplied user IDs are
     never trusted.
 
     Presence is best-effort ephemeral state. A temporary

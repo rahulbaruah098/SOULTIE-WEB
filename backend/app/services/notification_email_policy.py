@@ -1,4 +1,4 @@
-"""Verified-recipient policy for Xuoroni Notification emails.
+"""Verified-recipient policy for Soultie Notification emails.
 
 No SMTP sending or delivery-state mutation happens here.
 """

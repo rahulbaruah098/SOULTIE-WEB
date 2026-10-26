@@ -1,4 +1,4 @@
-"""Tests for Xuoroni local profile media storage."""
+"""Tests for Soultie local profile media storage."""
 
 from pathlib import Path
 

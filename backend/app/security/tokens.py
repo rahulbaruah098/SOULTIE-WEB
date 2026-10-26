@@ -8,7 +8,7 @@ from flask import current_app
 
 
 class TokenError(Exception):
-    """Base Xuoroni token error."""
+    """Base Soultie token error."""
 
 
 class InvalidAccessToken(TokenError):

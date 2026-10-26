@@ -1,4 +1,4 @@
-"""Durable MongoDB queue state for Xuoroni Notification delivery."""
+"""Durable MongoDB queue state for Soultie Notification delivery."""
 
 from datetime import (
     datetime,

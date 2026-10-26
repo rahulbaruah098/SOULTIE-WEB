@@ -1,4 +1,4 @@
-"""Pure idempotency replay checks for Xuoroni cafe reservations.
+"""Pure idempotency replay checks for Soultie cafe reservations.
 
 Compare a validated booking request with a record fetched inside
 the active booking transaction.

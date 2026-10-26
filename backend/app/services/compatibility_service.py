@@ -1,4 +1,4 @@
-"""Deterministic privacy-safe compatibility scoring for Xuoroni."""
+"""Deterministic privacy-safe compatibility scoring for Soultie."""
 
 from math import asin, cos, radians, sin, sqrt
 

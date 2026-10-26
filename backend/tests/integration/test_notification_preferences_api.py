@@ -1,4 +1,4 @@
-"""Authenticated HTTP tests for Xuoroni Notification Preferences."""
+"""Authenticated HTTP tests for Soultie Notification Preferences."""
 
 from uuid import uuid4
 

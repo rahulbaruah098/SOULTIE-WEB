@@ -1,4 +1,4 @@
-"""Authenticated Xuoroni Notification REST API."""
+"""Authenticated Soultie Notification REST API."""
 
 from flask import (
     Blueprint,

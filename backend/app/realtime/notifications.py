@@ -1,4 +1,4 @@
-"""Privacy-scoped realtime notification routing for Xuoroni."""
+"""Privacy-scoped realtime notification routing for Soultie."""
 
 from flask_socketio import join_room
 

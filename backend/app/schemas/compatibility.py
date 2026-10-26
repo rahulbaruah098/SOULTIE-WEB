@@ -1,4 +1,4 @@
-"""Canonical privacy-safe compatibility contracts for Xuoroni."""
+"""Canonical privacy-safe compatibility contracts for Soultie."""
 
 from copy import deepcopy
 

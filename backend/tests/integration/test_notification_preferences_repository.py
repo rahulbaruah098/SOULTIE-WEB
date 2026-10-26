@@ -1,4 +1,4 @@
-"""MongoDB integration tests for Xuoroni Notification Preferences persistence."""
+"""MongoDB integration tests for Soultie Notification Preferences persistence."""
 
 from concurrent.futures import (
     ThreadPoolExecutor,

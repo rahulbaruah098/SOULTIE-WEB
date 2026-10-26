@@ -1,4 +1,4 @@
-"""FCM HTTP v1 transport for Xuoroni push notifications.
+"""FCM HTTP v1 transport for Soultie push notifications.
 
 The caller supplies an authorized, server-side device token.
 

@@ -1,4 +1,4 @@
-"""MongoDB repository for Xuoroni profile media metadata."""
+"""MongoDB repository for Soultie profile media metadata."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-﻿"""Tests for Xuoroni matching schemas."""
+﻿"""Tests for Soultie matching schemas."""
 
 from datetime import (
     datetime,

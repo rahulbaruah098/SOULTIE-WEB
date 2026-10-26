@@ -1,4 +1,4 @@
-﻿"""Business operations for Xuoroni culture knowledge."""
+﻿"""Business operations for Soultie culture knowledge."""
 
 from copy import deepcopy
 from datetime import date, datetime

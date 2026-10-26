@@ -1,4 +1,4 @@
-"""MongoDB persistence for Xuoroni chat."""
+"""MongoDB persistence for Soultie chat."""
 
 from datetime import (
     datetime,

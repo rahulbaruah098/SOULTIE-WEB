@@ -1,4 +1,4 @@
-"""Tests for Xuoroni Match Experience schema contracts."""
+"""Tests for Soultie Match Experience schema contracts."""
 
 import pytest
 

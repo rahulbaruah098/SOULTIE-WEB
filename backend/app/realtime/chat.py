@@ -1,4 +1,4 @@
-"""Authorized realtime chat-room handlers for Xuoroni."""
+"""Authorized realtime chat-room handlers for Soultie."""
 
 from flask import (
     current_app,

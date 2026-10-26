@@ -1,4 +1,4 @@
-"""Redis-backed realtime presence state for Xuoroni."""
+"""Redis-backed realtime presence state for Soultie."""
 
 from flask import current_app
 from redis.exceptions import RedisError

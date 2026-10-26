@@ -1,4 +1,4 @@
-"""Xuoroni cafe reservation validation and lifecycle rules.
+"""Soultie cafe reservation validation and lifecycle rules.
 
 This module does not read/write MongoDB, authenticate users,
 allocate tables, promise availability, or send notifications.

@@ -1,4 +1,4 @@
-"""Strict weekly opening-hours contract for Xuoroni venues.
+"""Strict weekly opening-hours contract for Soultie venues.
 
 This module validates business opening periods only.
 Reservation eligibility also requires capacity and conflict checks.

@@ -1,4 +1,4 @@
-"""Canonical Xuoroni profile and discovery data models."""
+"""Canonical Soultie profile and discovery data models."""
 
 from copy import deepcopy
 from datetime import datetime, timezone

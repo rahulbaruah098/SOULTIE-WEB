@@ -62,7 +62,7 @@ def test_disabled_queue_does_not_inherit_previous_pubsub_manager():
         auth={},
     )
 
-    # Missing auth is intentionally rejected by Xuoroni,
+    # Missing auth is intentionally rejected by Soultie,
     # but constructing the Socket.IO test client itself
     # must be possible when the queue is disabled.
     assert (

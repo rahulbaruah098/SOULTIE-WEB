@@ -1,4 +1,4 @@
-"""Validation contracts for Xuoroni cafe venue profiles.
+"""Validation contracts for Soultie cafe venue profiles.
 
 This module validates public input but does not perform
 authentication, approval, or database modifications.

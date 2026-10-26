@@ -1,4 +1,4 @@
-"""Safe Meet push adapter using Xuoroni's device registry.
+"""Safe Meet push adapter using Soultie's device registry.
 
 The actual FCM transport is injected separately. No secrets, device
 tokens or private Safe Meet details enter notification payloads.

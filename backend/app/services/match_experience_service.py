@@ -1,4 +1,4 @@
-"""Privacy-safe Match Experience business logic for Xuoroni."""
+"""Privacy-safe Match Experience business logic for Soultie."""
 
 from app.repositories.chat_repository import (
     get_conversation_by_match_id,

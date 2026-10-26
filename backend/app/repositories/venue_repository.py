@@ -1,4 +1,4 @@
-"""Venue persistence for Xuoroni caf? partner management.
+"""Venue persistence for Soultie caf? partner management.
 
 The authenticated service layer supplies trusted owner and admin IDs.
 Database methods never accept client-supplied MongoDB operators.

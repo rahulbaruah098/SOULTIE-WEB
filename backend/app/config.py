@@ -16,7 +16,7 @@ def _env_bool(name: str, default: bool = False) -> bool:
 
 
 class BaseConfig:
-    APP_NAME = "Xuoroni"
+    APP_NAME = "SOULTIE"
 
     API_VERSION = os.getenv(
         "API_VERSION",
@@ -30,7 +30,7 @@ class BaseConfig:
 
     MONGO_URI = os.getenv(
         "MONGO_URI",
-        "mongodb://localhost:27017/xuoroni",
+        "mongodb://localhost:27017/soultie",
     )
 
     REDIS_URL = os.getenv(
@@ -169,7 +169,7 @@ class BaseConfig:
 
     SMTP_FROM_NAME = os.getenv(
         "SMTP_FROM_NAME",
-        "Xuoroni",
+        "SOULTIE",
     )
 
     SMTP_USE_TLS = (
@@ -293,7 +293,7 @@ class BaseConfig:
 
     # Short profile videos.
     #
-    # Xuoroni V1 supports clips up to four seconds.
+    # Soultie V1 supports clips up to four seconds.
     MEDIA_VIDEO_MAX_DURATION_MS = int(
         os.getenv(
             "MEDIA_VIDEO_MAX_DURATION_MS",

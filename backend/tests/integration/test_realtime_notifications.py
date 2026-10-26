@@ -1,4 +1,4 @@
-"""Integration tests for privacy-scoped Xuoroni realtime notifications."""
+"""Integration tests for privacy-scoped Soultie realtime notifications."""
 
 from datetime import (
     datetime,

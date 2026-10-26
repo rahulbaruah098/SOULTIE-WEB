@@ -1,4 +1,4 @@
-"""Business and processing services for Xuoroni profile media."""
+"""Business and processing services for Soultie profile media."""
 
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ SUPPORTED_VIDEO_INPUT_FORMATS = frozenset(
 
 
 class MediaServiceError(RuntimeError):
-    """Base error for Xuoroni media operations."""
+    """Base error for Soultie media operations."""
 
     def __init__(
         self,

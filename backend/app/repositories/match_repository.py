@@ -1,4 +1,4 @@
-"""MongoDB repository operations for Xuoroni matching."""
+"""MongoDB repository operations for Soultie matching."""
 
 from datetime import (
     datetime,

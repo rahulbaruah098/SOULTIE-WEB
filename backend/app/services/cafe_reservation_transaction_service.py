@@ -1,4 +1,4 @@
-"""MongoDB transaction boundary for Xuoroni cafe reservations.
+"""MongoDB transaction boundary for Soultie cafe reservations.
 
 Booking writes must be performed exclusively inside this coordinator,
 using the provided session for EVERY database read and write.

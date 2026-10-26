@@ -1,4 +1,4 @@
-"""Persistence helpers for Xuoroni safety relationships."""
+"""Persistence helpers for Soultie safety relationships."""
 
 from bson import ObjectId
 from bson.errors import InvalidId

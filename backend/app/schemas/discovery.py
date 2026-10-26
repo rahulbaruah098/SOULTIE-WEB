@@ -1,4 +1,4 @@
-"""Canonical discovery data contracts for Xuoroni.
+"""Canonical discovery data contracts for Soultie.
 
 Discovery operates only on information explicitly supplied by users.
 It must never infer ethnicity, tribe, community, religion, gender, or

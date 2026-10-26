@@ -1,4 +1,4 @@
-"""Validation and normalization rules for Xuoroni profiles."""
+"""Validation and normalization rules for Soultie profiles."""
 
 import re
 import unicodedata

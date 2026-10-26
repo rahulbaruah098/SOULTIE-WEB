@@ -1,4 +1,4 @@
-"""Recipient-aware Xuoroni cafe booking notification coordination.
+"""Recipient-aware Soultie cafe booking notification coordination.
 
 This is an internal, unscheduled service. No HTTP endpoint or
 notification provider is enabled.

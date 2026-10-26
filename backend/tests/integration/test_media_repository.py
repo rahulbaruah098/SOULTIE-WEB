@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni profile media repository."""
+"""Integration tests for Soultie profile media repository."""
 
 from uuid import uuid4
 

@@ -1,4 +1,4 @@
-﻿"""Tests for Xuoroni discovery service and privacy-safe serialization."""
+﻿"""Tests for Soultie discovery service and privacy-safe serialization."""
 
 from datetime import (
     date,

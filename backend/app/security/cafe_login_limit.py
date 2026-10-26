@@ -1,4 +1,4 @@
-"""Redis-backed login attempt limits for Xuoroni cafe partners.
+"""Redis-backed login attempt limits for Soultie cafe partners.
 
 This is separate from dating-user authentication and cafe registration.
 It charges requests before password authentication or session issuance.

@@ -1,4 +1,4 @@
-﻿"""Validation and normalization rules for Xuoroni culture knowledge."""
+﻿"""Validation and normalization rules for Soultie culture knowledge."""
 
 import re
 import unicodedata

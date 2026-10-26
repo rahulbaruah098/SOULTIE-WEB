@@ -1,4 +1,4 @@
-"""Isolated HTTP security tests for the Xuoroni cafe partner login."""
+"""Isolated HTTP security tests for the Soultie cafe partner login."""
 
 from types import SimpleNamespace
 from unittest.mock import Mock

@@ -1,4 +1,4 @@
-"""Authenticated Xuoroni dating-user cafe reservation creation.
+"""Authenticated Soultie dating-user cafe reservation creation.
 
 Booking policy, current eligibility, venue fence, capacity and
 outbox writes are enforced by the existing transactional service.

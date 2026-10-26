@@ -1,4 +1,4 @@
-"""Business-rule tests for Xuoroni chat service."""
+"""Business-rule tests for Soultie chat service."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-"""Xuoroni backend runtime entry point."""
+"""Soultie backend runtime entry point."""
 
 import os
 from datetime import datetime, timezone
@@ -11,7 +11,7 @@ from app.extensions import mongo, socketio
 
 def ensure_default_admin(app):
     """
-    Create the configured Xuoroni admin only when it does not
+    Create the configured Soultie admin only when it does not
     already exist.
 
     Existing admin passwords are never silently overwritten.
@@ -65,7 +65,7 @@ def ensure_default_admin(app):
         )
 
         app.logger.info(
-            "Default Xuoroni admin created."
+            "Default SOULTIE admin created."
         )
 
 

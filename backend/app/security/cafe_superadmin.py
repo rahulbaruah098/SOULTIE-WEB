@@ -1,4 +1,4 @@
-"""Authorization boundary for Xuoroni Superadmin caf? APIs.
+"""Authorization boundary for Soultie Superadmin caf? APIs.
 
 Legacy admin authentication is preserved. New caf? moderation routes
 must use this stricter decorator, not legacy admin_required alone.

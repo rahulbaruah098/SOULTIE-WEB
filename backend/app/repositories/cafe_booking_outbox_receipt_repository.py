@@ -1,4 +1,4 @@
-"""Lease-token guarded delivery receipts for Xuoroni cafe booking events.
+"""Lease-token guarded delivery receipts for Soultie cafe booking events.
 
 Only the worker holding a currently valid processing lease may
 acknowledge delivery or schedule a failure retry.

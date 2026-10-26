@@ -1,4 +1,4 @@
-"""Redis-backed limits for public Xuoroni cafe registration.
+"""Redis-backed limits for public Soultie cafe registration.
 
 Use only Flask's configured, trusted remote address. Do not parse
 client-supplied forwarding headers here.

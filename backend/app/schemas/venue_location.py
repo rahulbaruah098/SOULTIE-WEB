@@ -1,4 +1,4 @@
-"""Validated geographical coordinates for Xuoroni venues.
+"""Validated geographical coordinates for Soultie venues.
 
 MongoDB GeoJSON stores coordinates as [longitude, latitude].
 No coordinates are inferred from an address or city name.

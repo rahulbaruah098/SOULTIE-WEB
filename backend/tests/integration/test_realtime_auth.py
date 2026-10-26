@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni realtime authentication."""
+"""Integration tests for Soultie realtime authentication."""
 
 from datetime import (
     datetime,

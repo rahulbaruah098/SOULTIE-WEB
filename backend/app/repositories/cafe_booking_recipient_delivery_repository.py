@@ -1,4 +1,4 @@
-"""Durable per-recipient records for Xuoroni cafe booking notifications.
+"""Durable per-recipient records for Soultie cafe booking notifications.
 
 This repository initializes one independent delivery record for each
 verified recipient returned by the trusted booking recipient router.

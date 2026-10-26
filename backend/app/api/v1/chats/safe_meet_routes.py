@@ -1,4 +1,4 @@
-"""Authenticated Safe Meet endpoints for the Xuoroni chat blueprint."""
+"""Authenticated Safe Meet endpoints for the Soultie chat blueprint."""
 
 from datetime import datetime, timezone
 from bson import ObjectId
@@ -838,3 +838,31 @@ def register_safe_meet_routes(blueprint, auth_required):
                     "message": "SOS unavailable.",
                 }
             }), 404
+
+
+    # SOULTIE_MATCHING_COMPATIBILITY_M1
+    @blueprint.get("/<conversation_id>/compatibility")
+    @auth_required
+    def conversation_culture_compatibility_api(conversation_id):
+        from app.extensions import mongo
+        from app.services.culture_conversation_service import (
+            conversation_compatibility,
+            CompatibilityUnavailable,
+        )
+        try:
+            actor = _actor()
+            _no_query()
+            result = conversation_compatibility(
+                database=mongo.db,
+                actor_id=actor,
+                conversation_id=conversation_id,
+            )
+            return jsonify(result), 200
+        except (CompatibilityUnavailable, ValueError, TypeError):
+            return jsonify({
+                "error": {
+                    "code": "COMPATIBILITY_UNAVAILABLE",
+                    "message": "Compatibility unavailable.",
+                }
+            }), 404
+

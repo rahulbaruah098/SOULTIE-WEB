@@ -1,4 +1,4 @@
-"""Authenticated HTTP tests for Xuoroni chat."""
+"""Authenticated HTTP tests for Soultie chat."""
 
 from uuid import uuid4
 

@@ -1,4 +1,4 @@
-"""Real-Mongo tests for durable Xuoroni Notification delivery state."""
+"""Real-Mongo tests for durable Soultie Notification delivery state."""
 
 from datetime import (
     datetime,

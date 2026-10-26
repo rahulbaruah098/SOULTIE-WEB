@@ -1,4 +1,4 @@
-"""Internal Xuoroni cafe booking notification outbox dispatcher.
+"""Internal Soultie cafe booking notification outbox dispatcher.
 
 This module is deliberately NOT a scheduled worker or HTTP endpoint.
 

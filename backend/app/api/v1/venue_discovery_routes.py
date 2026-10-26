@@ -1,4 +1,4 @@
-"""Approved venue discovery API for the Xuoroni mobile client."""
+"""Approved venue discovery API for the Soultie mobile client."""
 
 import re
 

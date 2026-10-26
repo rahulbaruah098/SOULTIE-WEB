@@ -1,4 +1,4 @@
-"""Security tests for Xuoroni caf? partner account foundation."""
+"""Security tests for Soultie caf? partner account foundation."""
 
 from datetime import datetime, timezone
 from types import SimpleNamespace

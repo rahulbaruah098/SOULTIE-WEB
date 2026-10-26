@@ -1,4 +1,4 @@
-"""Server-only recipient routing for Xuoroni cafe booking events.
+"""Server-only recipient routing for Soultie cafe booking events.
 
 Revalidate the durable event against its persisted reservation and
 the current customer, cafe-partner, and venue account records.

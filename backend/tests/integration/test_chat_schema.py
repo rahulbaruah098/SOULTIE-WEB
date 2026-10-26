@@ -1,4 +1,4 @@
-"""Tests for Xuoroni chat schemas."""
+"""Tests for Soultie chat schemas."""
 
 from datetime import (
     datetime,

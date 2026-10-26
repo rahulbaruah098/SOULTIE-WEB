@@ -1,4 +1,4 @@
-"""HTTP security contracts for Xuoroni cafe operations API."""
+"""HTTP security contracts for Soultie cafe operations API."""
 
 from types import SimpleNamespace
 from unittest.mock import Mock

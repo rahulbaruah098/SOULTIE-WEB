@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni profile media upload orchestration."""
+"""Integration tests for Soultie profile media upload orchestration."""
 
 from io import BytesIO
 from pathlib import Path

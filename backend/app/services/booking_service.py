@@ -1,4 +1,4 @@
-"""Internal transactional cafe booking orchestration for Xuoroni.
+"""Internal transactional cafe booking orchestration for Soultie.
 
 Do NOT register this module directly as an HTTP endpoint.
 

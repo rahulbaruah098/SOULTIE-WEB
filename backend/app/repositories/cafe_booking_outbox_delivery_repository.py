@@ -1,4 +1,4 @@
-"""Atomic MongoDB leases for the Xuoroni cafe booking outbox.
+"""Atomic MongoDB leases for the Soultie cafe booking outbox.
 
 This internal repository only claims durable events. It does not
 send notifications, mark delivery successful, or acknowledge events.

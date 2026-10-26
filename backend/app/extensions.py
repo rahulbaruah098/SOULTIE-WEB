@@ -74,7 +74,7 @@ def init_extensions(app: Flask) -> None:
     # Flask-SocketIO keeps server_options on the shared
     # extension between repeated init_app() calls.
     #
-    # Xuoroni intentionally uses one shared SocketIO extension,
+    # Soultie intentionally uses one shared SocketIO extension,
     # but create_app() is called repeatedly by tests, CLI tools,
     # and application factories. A previous app configured with
     # a Redis message queue must never leak its PubSub manager

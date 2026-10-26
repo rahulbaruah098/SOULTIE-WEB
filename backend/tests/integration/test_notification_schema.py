@@ -1,4 +1,4 @@
-"""Tests for Xuoroni durable Notification schema contracts."""
+"""Tests for Soultie durable Notification schema contracts."""
 
 from datetime import (
     datetime,

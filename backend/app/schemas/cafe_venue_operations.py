@@ -1,4 +1,4 @@
-"""Validation for Xuoroni cafe venue operational settings.
+"""Validation for Soultie cafe venue operational settings.
 
 Pure validation only. No database writes, approval decisions,
 booking creation, session handling, or user authorization.

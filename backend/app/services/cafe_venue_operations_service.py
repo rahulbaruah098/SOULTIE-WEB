@@ -1,4 +1,4 @@
-"""Authorized service for Xuoroni cafe venue operations.
+"""Authorized service for Soultie cafe venue operations.
 
 Facility-only writes are enabled for now. Weekly hours and
 booking settings are blocked until confirmed reservation

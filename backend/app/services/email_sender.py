@@ -1,4 +1,4 @@
-"""SMTP email delivery service for Xuoroni."""
+"""SMTP email delivery service for Soultie."""
 
 import smtplib
 import ssl

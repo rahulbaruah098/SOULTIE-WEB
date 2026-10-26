@@ -1,4 +1,4 @@
-"""Canonical in-app Notification Preferences schema for Xuoroni."""
+"""Canonical in-app Notification Preferences schema for Soultie."""
 
 from datetime import (
     datetime,

@@ -1,4 +1,4 @@
-"""Purpose-isolated email verification for Xuoroni cafe owners.
+"""Purpose-isolated email verification for Soultie cafe owners.
 
 Codes issued here cannot authenticate a dating user or an admin.
 No approval or login session is issued by this module.

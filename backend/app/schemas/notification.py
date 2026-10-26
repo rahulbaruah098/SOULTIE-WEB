@@ -1,4 +1,4 @@
-"""Canonical privacy-minimal durable Notification schema for Xuoroni.
+"""Canonical privacy-minimal durable Notification schema for Soultie.
 
 Schema builders cannot grant access to a match, chat, or resource.
 Producers and readers must recheck authorization and lifecycle state.

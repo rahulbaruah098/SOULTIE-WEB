@@ -1,4 +1,4 @@
-"""Permanent tests for the Xuoroni transactional booking venue fence.
+"""Permanent tests for the Soultie transactional booking venue fence.
 
 Tests verify the repository boundary with a mocked database.
 They do not prove that an arbitrary non-None session is an active

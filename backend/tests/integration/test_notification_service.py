@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni Notification service privacy contracts."""
+"""Integration tests for Soultie Notification service privacy contracts."""
 
 import base64
 import json

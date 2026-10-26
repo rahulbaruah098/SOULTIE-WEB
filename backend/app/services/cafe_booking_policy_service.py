@@ -1,4 +1,4 @@
-"""Database-backed booking policy for Xuoroni cafe venues.
+"""Database-backed booking policy for Soultie cafe venues.
 
 This is a fail-closed policy loader to be invoked ONLY by a
 trusted booking service with an active MongoDB transaction.

@@ -1,4 +1,4 @@
-"""Safe response contracts for Xuoroni Match Experience."""
+"""Safe response contracts for Soultie Match Experience."""
 
 MATCH_EXPERIENCE_VERSION = "v1"
 

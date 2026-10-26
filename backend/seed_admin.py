@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from werkzeug.security import generate_password_hash
 
 load_dotenv()
-client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/xuoroni"))
+client = MongoClient(os.getenv("MONGO_URI", "mongodb://localhost:27017/soultie"))
 db = client.get_default_database()
 email = os.getenv("ADMIN_EMAIL", "admin@xuoroni.local").strip().lower()
 password = os.getenv("ADMIN_PASSWORD", "ChangeMe123!")

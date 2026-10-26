@@ -1,4 +1,4 @@
-"""Internal transactional Xuoroni cafe reservation lifecycle service.
+"""Internal transactional Soultie cafe reservation lifecycle service.
 
 Public HTTP routes must obtain actor_id exclusively from the verified
 dating-user or cafe-partner authentication context.

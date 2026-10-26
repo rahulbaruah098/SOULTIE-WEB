@@ -1,4 +1,4 @@
-"""Permanent mocked Xuoroni cafe booking dispatcher safety tests.
+"""Permanent mocked Soultie cafe booking dispatcher safety tests.
 
 No real MongoDB, notification provider, email, or network delivery.
 """

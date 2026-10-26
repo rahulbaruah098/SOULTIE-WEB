@@ -1,4 +1,4 @@
-"""Storage abstraction for Xuoroni profile media."""
+"""Storage abstraction for Soultie profile media."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class MediaStorageError(RuntimeError):
 
 
 class MediaStorageBackend(ABC):
-    """Abstract storage backend used by Xuoroni media services."""
+    """Abstract storage backend used by Soultie media services."""
 
     @abstractmethod
     def save(

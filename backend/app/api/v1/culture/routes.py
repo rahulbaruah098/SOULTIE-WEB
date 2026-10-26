@@ -1,4 +1,4 @@
-﻿"""Public Xuoroni culture knowledge API."""
+﻿"""Public Soultie culture knowledge API."""
 
 from flask import (
     Blueprint,

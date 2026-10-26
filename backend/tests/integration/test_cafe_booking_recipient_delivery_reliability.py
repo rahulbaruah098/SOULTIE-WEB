@@ -1,4 +1,4 @@
-"""Permanent mocked Xuoroni cafe recipient-delivery reliability tests.
+"""Permanent mocked Soultie cafe recipient-delivery reliability tests.
 
 Tests validate initialization, recipient isolation, claim fencing,
 retry scheduling, dead-letter handling, and stale receipt rejection.

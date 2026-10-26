@@ -1,4 +1,4 @@
-"""Tests for Xuoroni deterministic compatibility scoring."""
+"""Tests for Soultie deterministic compatibility scoring."""
 
 from copy import deepcopy
 

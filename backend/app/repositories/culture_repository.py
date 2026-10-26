@@ -1,4 +1,4 @@
-﻿"""MongoDB repository operations for Xuoroni culture knowledge."""
+﻿"""MongoDB repository operations for Soultie culture knowledge."""
 
 import re
 from datetime import datetime, timezone

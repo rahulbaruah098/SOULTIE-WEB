@@ -1,4 +1,4 @@
-"""Tests for Xuoroni compatibility access control."""
+"""Tests for Soultie compatibility access control."""
 
 import pytest
 from bson import ObjectId

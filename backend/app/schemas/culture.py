@@ -1,4 +1,4 @@
-"""Canonical culture knowledge data models for Xuoroni.
+"""Canonical culture knowledge data models for Soultie.
 
 This module defines server-side document templates only. Cultural identity is
 always user-declared; these catalog records must never be used to infer a

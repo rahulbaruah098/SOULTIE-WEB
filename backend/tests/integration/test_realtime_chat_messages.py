@@ -1,4 +1,4 @@
-"""Integration tests for Xuoroni realtime Chat messages."""
+"""Integration tests for Soultie realtime Chat messages."""
 
 from datetime import (
     datetime,

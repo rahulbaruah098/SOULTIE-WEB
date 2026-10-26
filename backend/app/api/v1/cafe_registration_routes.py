@@ -1,4 +1,4 @@
-"""Public Xuoroni cafe partner registration endpoint.
+"""Public Soultie cafe partner registration endpoint.
 
 This blueprint is registered separately after endpoint security tests.
 Registration does not create a session or grant venue approval.

@@ -1,4 +1,4 @@
-"""Secure Google ID-token verification for Xuoroni."""
+"""Secure Google ID-token verification for Soultie."""
 
 from flask import current_app
 

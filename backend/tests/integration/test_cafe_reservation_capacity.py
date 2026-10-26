@@ -1,4 +1,4 @@
-"""Permanent pure capacity-evaluation tests for Xuoroni cafes."""
+"""Permanent pure capacity-evaluation tests for Soultie cafes."""
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone

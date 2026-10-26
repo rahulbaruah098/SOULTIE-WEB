@@ -1,4 +1,4 @@
-"""Privacy-safe Notification business logic for Xuoroni."""
+"""Privacy-safe Notification business logic for Soultie."""
 
 import base64
 import binascii
@@ -77,7 +77,7 @@ logger = logging.getLogger(
 class NotificationServiceError(
     RuntimeError
 ):
-    """Base Xuoroni Notification-domain error."""
+    """Base Soultie Notification-domain error."""
 
     def __init__(
         self,

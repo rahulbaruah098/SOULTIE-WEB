@@ -1,4 +1,4 @@
-"""Integration tests for the Xuoroni Notification REST API."""
+"""Integration tests for the Soultie Notification REST API."""
 
 import pytest
 from flask import Flask

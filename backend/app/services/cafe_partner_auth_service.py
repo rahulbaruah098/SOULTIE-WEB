@@ -1,4 +1,4 @@
-"""Caf? partner account foundation for Xuoroni.
+"""Caf? partner account foundation for Soultie.
 
 Caf? identities are separate from dating-user and legacy admin identities.
 This module never creates JWTs, authorizes Superadmins, or exposes routes.

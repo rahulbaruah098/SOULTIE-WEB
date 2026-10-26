@@ -1,4 +1,4 @@
-"""Verified parent completion for Xuoroni cafe notification outbox.
+"""Verified parent completion for Soultie cafe notification outbox.
 
 Never acknowledge a parent booking event as delivered merely because
 one recipient or one external provider returned success.

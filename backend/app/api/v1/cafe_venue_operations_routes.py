@@ -1,4 +1,4 @@
-"""Protected API for Xuoroni cafe venue operations.
+"""Protected API for Soultie cafe venue operations.
 
 Facility-only updates are enabled. Opening hours and booking
 settings remain locked until booking conflict controls exist.

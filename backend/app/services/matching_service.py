@@ -1,4 +1,4 @@
-"""Business rules for Xuoroni profile actions and matching."""
+"""Business rules for Soultie profile actions and matching."""
 
 import logging
 

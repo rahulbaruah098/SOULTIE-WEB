@@ -1,4 +1,4 @@
-"""Transactional registration for Xuoroni cafe partners.
+"""Transactional registration for Soultie cafe partners.
 
 Both the account and venue must be inserted in one transaction.
 Registration does not verify email, grant approval, or create a login

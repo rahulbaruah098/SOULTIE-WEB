@@ -3,7 +3,7 @@ from pymongo import ASCENDING, DESCENDING, GEOSPHERE
 
 def ensure_indexes(db) -> list[str]:
     """
-    Create all Xuoroni MongoDB indexes required by the
+    Create all Soultie MongoDB indexes required by the
     current backend foundation.
 
     MongoDB create_index operations are idempotent when
@@ -367,7 +367,7 @@ def ensure_indexes(db) -> list[str]:
         )
     )
 
-    # Older Xuoroni databases may already have the original
+    # Older Soultie databases may already have the original
     # non-unique conversation/sequence index created under
     # MongoDB's default generated name. Remove only that known
     # legacy definition before creating the stronger unique
@@ -668,7 +668,7 @@ def ensure_indexes(db) -> list[str]:
     # =====================================================
 
     # Exactly one durable in-app Notification Preferences record
-    # is allowed per Xuoroni user.
+    # is allowed per Soultie user.
     created.append(
         db.notification_preferences.create_index(
             [

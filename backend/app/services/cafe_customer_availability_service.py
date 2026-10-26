@@ -1,4 +1,4 @@
-"""Pure availability calculation for Xuoroni cafe reservations.
+"""Pure availability calculation for Soultie cafe reservations.
 
 This module produces advisory availability only. Booking creation must
 repeat all checks against live MongoDB data inside the shared-fence
