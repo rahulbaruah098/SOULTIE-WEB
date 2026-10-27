@@ -18,3 +18,5 @@ email-validator==2.3.0
 requests==2.34.2
 
 Pillow==12.3.0
+
+firebase-admin==7.7.0

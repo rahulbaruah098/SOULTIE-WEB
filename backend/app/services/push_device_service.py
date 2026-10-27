@@ -47,7 +47,7 @@ def serialize_push_device(document):
     }
 
 
-def register_my_push_device(user_id, payload):
+def register_my_push_device(user_id, payload, *, family_id=None):
     if not isinstance(payload, dict):
         raise InvalidPushDevice("Invalid request body.")
 
@@ -94,6 +94,7 @@ def register_my_push_device(user_id, payload):
         push_provider=provider,
         push_token=token,
         device_name=name,
+        **({"family_id": family_id} if family_id is not None else {}),
     )
 
     return serialize_push_device(document)

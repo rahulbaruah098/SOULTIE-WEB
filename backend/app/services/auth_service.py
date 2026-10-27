@@ -17,6 +17,7 @@ from app.repositories.session_repository import (
     revoke_family,
     revoke_session_by_refresh_hash,
 )
+from app.repositories.push_device_repository import revoke_family_push_devices
 from app.repositories.user_repository import (
     create_user,
     delete_user,
@@ -177,6 +178,10 @@ def rotate_refresh_token(
                 existing["family_id"],
                 reason="refresh_token_reuse",
             )
+            revoke_family_push_devices(
+                user_id=existing["user_id"],
+                family_id=existing["family_id"],
+            )
 
             raise RefreshTokenReuseDetected(
                 "Refresh token reuse detected."
@@ -214,6 +219,10 @@ def rotate_refresh_token(
             revoke_family(
                 latest["family_id"],
                 reason="refresh_token_reuse",
+            )
+            revoke_family_push_devices(
+                user_id=latest["user_id"],
+                family_id=latest["family_id"],
             )
 
             raise RefreshTokenReuseDetected(
@@ -265,12 +274,17 @@ def logout_refresh_token(
     if not refresh_token:
         return False
 
-    return revoke_session_by_refresh_hash(
-        hash_refresh_token(
-            refresh_token
-        ),
-        reason="logout",
+    token_hash = hash_refresh_token(refresh_token)
+    session = get_session_by_refresh_hash(token_hash)
+    revoked = revoke_session_by_refresh_hash(
+        token_hash, reason="logout",
     )
+    if revoked and session and session.get("family_id"):
+        revoke_family_push_devices(
+            user_id=session["user_id"],
+            family_id=session["family_id"],
+        )
+    return revoked
 
 
 def logout_all_sessions(

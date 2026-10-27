@@ -22,7 +22,9 @@ def register_device():
 
     try:
         device = register_my_push_device(
-            g.current_user["_id"], payload
+            g.current_user["_id"], payload,
+            **({"family_id": g.auth_session["family_id"]}
+               if getattr(g, "auth_session", {}).get("family_id") else {}),
         )
     except InvalidPushDevice as exc:
         return error_response(

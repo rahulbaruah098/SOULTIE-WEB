@@ -40,6 +40,9 @@ def create_app(config_override=None) -> Flask:
 
     configure_logging(app)
     init_extensions(app)
+    # Initialize Firebase Cloud Messaging
+    from .firebase_push import init_firebase
+    init_firebase()
 
     register_middleware(app)
     register_error_handlers(app)

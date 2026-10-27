@@ -6,3 +6,9 @@ __pycache__/
 *.pyc
 backend/storage/profile_media/
 .env
+
+*.firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
+.env.backup.*
+**/.env.backup.*
+/backend/secrets/
