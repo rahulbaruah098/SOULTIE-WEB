@@ -48,6 +48,7 @@ def matching_users(app):
         profile_status="active",
         visibility="visible",
         onboarding_status="completed",
+        display_name=None,
     ):
         user = create_user()
 
@@ -90,7 +91,8 @@ def matching_users(app):
                         onboarding_status
                     ),
                     "display_name": (
-                        f"Matching Test {user_id}"
+                        display_name
+                        or f"Matching Test {user_id}"
                     ),
                 }
             },
@@ -559,6 +561,251 @@ def test_positive_action_on_existing_match_is_idempotent(
 
         assert count == 1
 
+def test_match_summary_includes_other_user_name(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users(
+        display_name="Atlanta",
+    )
+    second = matching_users(
+        display_name="Joaquin",
+    )
+
+    monkeypatch.setattr(
+        matching_service,
+        "get_primary_media",
+        lambda user_id: None,
+    )
+
+    with app.app_context():
+        create_match_if_absent(
+            first_user_id=first,
+            second_user_id=second,
+            matched_by=second,
+        )
+
+        result = list_my_matches(
+            first,
+        )
+
+        assert result["returned"] == 1
+
+        match = result["matches"][0]
+
+        assert (
+            match["other_user_id"]
+            == str(second)
+        )
+
+        assert (
+            match["other_user"]["id"]
+            == str(second)
+        )
+
+        assert (
+            match["other_user"]["display_name"]
+            == "Joaquin"
+        )
+
+        assert (
+            match["other_user"]["primary_media"]
+            is None
+        )
+
+def test_match_summary_is_symmetric_for_members(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users(
+        display_name="Atlanta",
+    )
+    second = matching_users(
+        display_name="Joaquin",
+    )
+
+    monkeypatch.setattr(
+        matching_service,
+        "get_primary_media",
+        lambda user_id: None,
+    )
+
+    with app.app_context():
+        created = create_match_if_absent(
+            first_user_id=first,
+            second_user_id=second,
+            matched_by=second,
+        )
+
+        match_id = created["match"]["_id"]
+
+        first_view = get_my_match(
+            user_id=first,
+            match_id=match_id,
+        )
+
+        second_view = get_my_match(
+            user_id=second,
+            match_id=match_id,
+        )
+
+        assert (
+            first_view["other_user"]["id"]
+            == str(second)
+        )
+
+        assert (
+            first_view["other_user"]["display_name"]
+            == "Joaquin"
+        )
+
+        assert (
+            second_view["other_user"]["id"]
+            == str(first)
+        )
+
+        assert (
+            second_view["other_user"]["display_name"]
+            == "Atlanta"
+        )
+
+def test_match_summary_includes_primary_media(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users(
+        display_name="Atlanta",
+    )
+    second = matching_users(
+        display_name="Joaquin",
+    )
+
+    media_id = ObjectId()
+
+    fake_media = {
+        "_id": media_id,
+        "user_id": second,
+        "kind": "profile_photo",
+        "status": "active",
+        "position": 0,
+        "is_primary": True,
+    }
+
+    monkeypatch.setattr(
+        matching_service,
+        "get_primary_media",
+        lambda user_id: (
+            fake_media
+            if str(user_id) == str(second)
+            else None
+        ),
+    )
+
+    monkeypatch.setattr(
+        matching_service,
+        "serialize_profile_media",
+        lambda media: {
+            "id": str(media["_id"]),
+            "kind": "profile_photo",
+            "position": 0,
+            "is_primary": True,
+            "status": "active",
+            "mime_type": "image/webp",
+            "width": 1080,
+            "height": 1350,
+            "content_url": (
+                f"/api/v1/media/"
+                f"{media['_id']}/content"
+            ),
+            "thumbnail_url": None,
+        },
+    )
+
+    with app.app_context():
+        create_match_if_absent(
+            first_user_id=first,
+            second_user_id=second,
+            matched_by=second,
+        )
+
+        result = list_my_matches(first)
+
+        other_user = (
+            result["matches"][0]["other_user"]
+        )
+
+        assert (
+            other_user["display_name"]
+            == "Joaquin"
+        )
+
+        assert (
+            other_user["primary_media"]["id"]
+            == str(media_id)
+        )
+
+        assert (
+            other_user[
+                "primary_media"
+            ]["is_primary"]
+            is True
+        )
+
+        assert (
+            other_user[
+                "primary_media"
+            ]["content_url"]
+            == (
+                f"/api/v1/media/"
+                f"{media_id}/content"
+            )
+        )
+
+def test_match_other_user_summary_does_not_leak_private_fields(
+    app,
+    matching_users,
+    monkeypatch,
+):
+    first = matching_users()
+    second = matching_users(
+        display_name="Joaquin",
+    )
+
+    monkeypatch.setattr(
+        matching_service,
+        "get_primary_media",
+        lambda user_id: None,
+    )
+
+    with app.app_context():
+        create_match_if_absent(
+            first_user_id=first,
+            second_user_id=second,
+            matched_by=second,
+        )
+
+        result = list_my_matches(first)
+
+        other_user = (
+            result["matches"][0]["other_user"]
+        )
+
+        forbidden = {
+            "phone",
+            "phone_number",
+            "email",
+            "date_of_birth",
+            "dob",
+            "storage_key",
+            "storage_path",
+        }
+
+        assert forbidden.isdisjoint(
+            other_user.keys()
+        )
 
 def test_list_get_and_unmatch_flow(
     app,

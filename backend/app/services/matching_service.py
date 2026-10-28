@@ -31,6 +31,13 @@ from app.schemas.match import (
     normalize_profile_action,
     serialize_match_for_user,
 )
+from app.repositories.media_repository import (
+    get_primary_media,
+)
+
+from app.schemas.media import (
+    serialize_profile_media,
+)
 
 
 logger = logging.getLogger(
@@ -442,6 +449,95 @@ def _emit_new_match_created_best_effort(
                 exc_info=True,
             )
 
+def _build_other_user_summary(
+    other_user_id,
+):
+    """
+    Return the small privacy-safe profile summary used by
+    authenticated Match surfaces.
+
+    Do not expose phone, email, DOB, internal storage keys,
+    moderation fields, or hidden/private profile attributes.
+    """
+
+    profile = get_profile_by_user_id(
+        other_user_id
+    )
+
+    if profile is None:
+        return {
+            "id": str(other_user_id),
+            "display_name": None,
+            "primary_media": None,
+        }
+
+    # Only expose a normal usable profile.
+    if (
+        profile.get("profile_status")
+        != "active"
+        or profile.get("onboarding_status")
+        != "completed"
+    ):
+        return {
+            "id": str(other_user_id),
+            "display_name": None,
+            "primary_media": None,
+        }
+
+    display_name = str(
+        profile.get("display_name")
+        or ""
+    ).strip()
+
+    primary_media = get_primary_media(
+        other_user_id
+    )
+
+    return {
+        "id": str(other_user_id),
+        "display_name": (
+            display_name
+            if display_name
+            else None
+        ),
+        "primary_media": (
+            serialize_profile_media(
+                primary_media
+            )
+            if primary_media is not None
+            else None
+        ),
+    }
+
+
+def _serialize_match_with_other_user(
+    match,
+    user_id,
+):
+    payload = serialize_match_for_user(
+        match,
+        user_id,
+    )
+
+    # Do not keep exposing profile summary after the Match
+    # lifecycle is no longer active.
+    if payload.get("status") != "active":
+        payload["other_user"] = None
+        return payload
+
+    other_user_id = payload.get(
+        "other_user_id"
+    )
+
+    payload["other_user"] = (
+        _build_other_user_summary(
+            other_user_id
+        )
+        if other_user_id
+        else None
+    )
+
+    return payload
 
 def submit_profile_action(
     *,
@@ -524,16 +620,13 @@ def submit_profile_action(
 
     if (
         existing_match is not None
-        and existing_match.get(
-            "status"
-        )
-        == "active"
+        and existing_match.get("status") == "active"
     ):
         return {
             "action": normalized_action,
             "matched": True,
             "match": (
-                serialize_match_for_user(
+                _serialize_match_with_other_user(
                     existing_match,
                     actor,
                 )
@@ -603,11 +696,11 @@ def submit_profile_action(
             == "active"
         ),
         "match": (
-            serialize_match_for_user(
-                match,
-                actor,
-            )
-        ),
+        _serialize_match_with_other_user(
+            match,
+            actor,
+        )
+    ),
     }
 
 
@@ -682,7 +775,7 @@ def list_my_matches(
 
     return {
         "matches": [
-            serialize_match_for_user(
+            _serialize_match_with_other_user(
                 match,
                 user,
             )
@@ -717,7 +810,7 @@ def get_my_match(
             status_code=404,
         )
 
-    return serialize_match_for_user(
+    return _serialize_match_with_other_user(
         match,
         user,
     )

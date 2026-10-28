@@ -143,6 +143,7 @@ def _activate_user(
     profile_status="active",
     visibility="visible",
     onboarding_status="completed",
+    display_name=None,
 ):
     profile = ensure_profile(
         user_id
@@ -157,7 +158,8 @@ def _activate_user(
         {
             "$set": {
                 "display_name": (
-                    f"Match API {user_id}"
+                    display_name
+                    or f"Match API {user_id}"
                 ),
                 "birth_date": (
                     "2000-01-01"
@@ -412,11 +414,13 @@ def test_mutual_like_creates_real_match(
 
     with app.app_context():
         _activate_user(
-            first["user_id"]
+            first["user_id"],
+            display_name="Atlanta",
         )
 
         _activate_user(
-            second["user_id"]
+            second["user_id"],
+            display_name="Joaquin",
         )
 
     first_response = client.post(
@@ -497,11 +501,13 @@ def test_match_list_get_and_unmatch_api(
 
     with app.app_context():
         _activate_user(
-            first["user_id"]
+            first["user_id"],
+            display_name="Atlanta",
         )
 
         _activate_user(
-            second["user_id"]
+            second["user_id"],
+            display_name="Joaquin",
         )
 
     client.post(
@@ -559,6 +565,50 @@ def test_match_list_get_and_unmatch_api(
         == match_id
     )
 
+    listed_match = (
+        listing_body["matches"][0]
+    )
+
+    assert (
+        listed_match["other_user_id"]
+        == str(second["user_id"])
+    )
+
+    assert (
+        listed_match["other_user"]["id"]
+        == str(second["user_id"])
+    )
+
+    assert (
+        listed_match[
+            "other_user"
+        ]["display_name"]
+        == "Joaquin"
+    )
+
+    assert (
+        listed_match[
+            "other_user"
+        ]["primary_media"]
+        is None
+    )
+
+    forbidden = {
+        "phone",
+        "phone_number",
+        "email",
+        "date_of_birth",
+        "dob",
+        "storage_key",
+        "storage_path",
+    }
+
+    assert forbidden.isdisjoint(
+        listed_match[
+            "other_user"
+        ].keys()
+    )
+
     single = client.get(
         (
             "/api/v1/matches/"
@@ -578,6 +628,17 @@ def test_match_list_get_and_unmatch_api(
         == str(
             second["user_id"]
         )
+    )
+
+    single_match = (
+        single.get_json()["match"]
+    )
+
+    assert (
+        single_match[
+            "other_user"
+        ]["display_name"]
+        == "Joaquin"
     )
 
     unmatch_response = client.post(
@@ -996,11 +1057,13 @@ def _create_active_match_for_experience(
 
     with app.app_context():
         _activate_user(
-            first["user_id"]
+            first["user_id"],
+            display_name="Atlanta",
         )
 
         _activate_user(
-            second["user_id"]
+            second["user_id"],
+            display_name="Joaquin",
         )
 
     first_action = client.post(
@@ -1153,6 +1216,45 @@ def test_match_experience_success(
 
     assert (
         body[
+            "match"
+        ][
+            "other_user"
+        ][
+            "id"
+        ]
+        == str(
+            pair[
+                "second"
+            ][
+                "user_id"
+            ]
+        )
+    )
+
+    assert (
+        body[
+            "match"
+        ][
+            "other_user"
+        ][
+            "display_name"
+        ]
+        == "Joaquin"
+    )
+
+    assert (
+        body[
+            "match"
+        ][
+            "other_user"
+        ][
+            "primary_media"
+        ]
+        is None
+    )
+
+    assert (
+        body[
             "compatibility"
         ][
             "target_user_id"
@@ -1276,6 +1378,28 @@ def test_match_experience_is_symmetric_for_both_members(
                 "user_id"
             ]
         )
+    )
+
+    assert (
+        first_response.get_json()[
+            "match"
+        ][
+            "other_user"
+        ][
+            "display_name"
+        ]
+        == "Joaquin"
+    )
+
+    assert (
+        second_response.get_json()[
+            "match"
+        ][
+            "other_user"
+        ][
+            "display_name"
+        ]
+        == "Atlanta"
     )
 
 

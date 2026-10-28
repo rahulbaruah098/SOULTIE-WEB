@@ -753,6 +753,25 @@ def _active_match(
         "updated_at": (
             "2026-10-14T10:00:00+00:00"
         ),
+        "other_user": {
+            "id": "target-user",
+            "display_name": "Joaquin",
+            "primary_media": {
+                "id": "media-123",
+                "kind": "profile_photo",
+                "position": 0,
+                "is_primary": True,
+                "status": "active",
+                "mime_type": "image/webp",
+                "width": 1080,
+                "height": 1350,
+                "content_url": (
+                    "/api/v1/media/"
+                    "media-123/content"
+                ),
+                "thumbnail_url": None,
+            },
+        },
     }
 
     match.update(
@@ -860,6 +879,57 @@ def test_get_match_experience_no_conversation_is_chat_ready(
             "other_user_id"
         ]
         == "target-user"
+    )
+
+    assert (
+        result[
+            "match"
+        ][
+            "other_user"
+        ][
+            "id"
+        ]
+        == "target-user"
+    )
+
+    assert (
+        result[
+            "match"
+        ][
+            "other_user"
+        ][
+            "display_name"
+        ]
+        == "Joaquin"
+    )
+
+    assert (
+        result[
+            "match"
+        ][
+            "other_user"
+        ][
+            "primary_media"
+        ][
+            "id"
+        ]
+        == "media-123"
+    )
+
+    assert (
+        result[
+            "match"
+        ][
+            "other_user"
+        ][
+            "primary_media"
+        ][
+            "content_url"
+        ]
+        == (
+            "/api/v1/media/"
+            "media-123/content"
+        )
     )
 
     assert (
